@@ -1,0 +1,143 @@
+import { Injectable } from '@angular/core';
+import {
+  BehaviorSubject,
+  combineLatest,
+  Observable,
+  Subject,
+} from 'rxjs';
+import {
+  debounceTime,
+  distinctUntilChanged,
+  map,
+  shareReplay,
+  startWith,
+  switchMap,
+  tap,
+} from 'rxjs/operators';
+import { ApiService } from './api.service';
+import {
+  DiagnosticEvent,
+  EventFilters,
+  EventsResponse,
+  VehicleStats,
+  CodeStats,
+  CriticalVehicle,
+} from '../models/event.model';
+
+export interface LoadState<T> {
+  data: T | null;
+  loading: boolean;
+  error: string | null;
+}
+
+@Injectable({ providedIn: 'root' })
+export class FleetStateService {
+  private readonly vehicleIds$ = new BehaviorSubject<string[]>([]);
+  private readonly code$       = new BehaviorSubject<string>('');
+  private readonly level$      = new BehaviorSubject<string>('');
+  private readonly from$       = new BehaviorSubject<string>('');
+  private readonly to$         = new BehaviorSubject<string>('');
+  private readonly page$       = new BehaviorSubject<number>(0);
+  readonly pageSize = 50;
+
+  private readonly pendingCount$ = new BehaviorSubject<number>(0);
+
+  readonly activeFilters$: Observable<EventFilters>;
+  readonly events$: Observable<LoadState<EventsResponse>>;
+  readonly vehicleStats$: Observable<LoadState<VehicleStats[]>>;
+  readonly codeSummary$: Observable<LoadState<CodeStats[]>>;
+  readonly critical$: Observable<LoadState<CriticalVehicle[]>>;
+  readonly liveStream$: Observable<DiagnosticEvent>;
+  readonly pendingLiveCount$: Observable<number>;
+
+  constructor(private readonly api: ApiService) {
+    this.activeFilters$ = combineLatest([
+      this.vehicleIds$.pipe(debounceTime(300), distinctUntilChanged((a, b) => a.join() === b.join())),
+      this.code$.pipe(debounceTime(300), distinctUntilChanged()),
+      this.level$.pipe(distinctUntilChanged()),
+      this.from$.pipe(debounceTime(400), distinctUntilChanged()),
+      this.to$.pipe(debounceTime(400), distinctUntilChanged()),
+      this.page$.pipe(distinctUntilChanged()),
+    ]).pipe(
+      map(([vehicleIds, code, level, from, to, page]) => ({
+        vehicleIds,
+        code,
+        level,
+        from,
+        to,
+        limit: this.pageSize,
+        offset: page * this.pageSize,
+      })),
+      shareReplay(1),
+    );
+
+    this.events$ = this.activeFilters$.pipe(
+      switchMap((filters) =>
+        this.api.getEvents(filters).pipe(
+          map((data) => ({ data, loading: false, error: null })),
+          startWith({ data: null, loading: true, error: null }),
+        )
+      ),
+      shareReplay(1),
+    );
+
+    this.vehicleStats$ = this.activeFilters$.pipe(
+      switchMap((filters) =>
+        this.api.getStatsByVehicle(filters.from, filters.to).pipe(
+          map((data) => ({ data, loading: false, error: null })),
+          startWith({ data: null, loading: true, error: null }),
+        )
+      ),
+      shareReplay(1),
+    );
+
+    this.codeSummary$ = this.api.getStatsByCode().pipe(
+      map((data) => ({ data, loading: false, error: null })),
+      startWith({ data: null, loading: true, error: null }),
+      shareReplay(1),
+    );
+
+    this.critical$ = this.api.getCritical().pipe(
+      map((data) => ({ data, loading: false, error: null })),
+      startWith({ data: null, loading: true, error: null }),
+      shareReplay(1),
+    );
+
+    this.liveStream$ = this.api.getLiveStream().pipe(
+      tap(() => this.pendingCount$.next(this.pendingCount$.value + 1)),
+      shareReplay(1),
+    );
+
+    this.pendingLiveCount$ = this.pendingCount$.asObservable();
+
+    // Kick off live stream on startup
+    this.liveStream$.subscribe();
+  }
+
+  setVehicleIds(ids: string[]) { this.vehicleIds$.next(ids); this.page$.next(0); }
+  setCode(code: string)        { this.code$.next(code); }
+  setLevel(level: string)      { this.level$.next(level); this.page$.next(0); }
+  setFrom(from: string)        { this.from$.next(from); }
+  setTo(to: string)            { this.to$.next(to); }
+  setPage(page: number)        { this.page$.next(page); }
+
+  applyLiveUpdates() {
+    this.pendingCount$.next(0);
+    // Re-trigger by poking the page — keeps current page, just refreshes
+    this.page$.next(this.page$.value);
+  }
+
+  get currentFilters(): EventFilters {
+    return {
+      vehicleIds: this.vehicleIds$.value,
+      code: this.code$.value,
+      level: this.level$.value,
+      from: this.from$.value,
+      to: this.to$.value,
+      limit: this.pageSize,
+      offset: this.page$.value * this.pageSize,
+    };
+  }
+
+  get currentPage(): number { return this.page$.value; }
+}

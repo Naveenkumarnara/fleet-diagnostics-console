@@ -1,0 +1,21 @@
+<div class="shell">
+  <header class="top-bar" role="banner">
+    <span class="logo">Fleet Diagnostics</span>
+    <nav aria-label="Main navigation">
+      <a routerLink="/events"  routerLinkActive="active">Events</a>
+      <a routerLink="/summary" routerLinkActive="active">Summary</a>
+    </nav>
+    <span class="live-dot" title="Live stream active" aria-label="Live stream active"></span>
+  </header>
+
+  <app-search-panel></app-search-panel>
+
+  <app-live-banner
+    [count]="(fleet.pendingLiveCount$ | async) ?? 0"
+    (apply)="fleet.applyLiveUpdates()"
+  ></app-live-banner>
+
+  <main class="main-content">
+    <router-outlet></router-outlet>
+  </main>
+</div>

@@ -1,0 +1,49 @@
+<form [formGroup]="form" class="search-panel" aria-label="Filter events">
+  <div class="filter-row">
+    <div class="filter-group">
+      <label for="vehicleIds">Vehicle IDs</label>
+      <input
+        id="vehicleIds"
+        type="text"
+        formControlName="vehicleIds"
+        placeholder="V001, V002, ..."
+        aria-describedby="vehicleIds-hint"
+      />
+      <span id="vehicleIds-hint" class="hint">comma-separated</span>
+    </div>
+
+    <div class="filter-group">
+      <label for="code">Error Code</label>
+      <input
+        id="code"
+        type="text"
+        formControlName="code"
+        placeholder="P0300, U0420..."
+      />
+    </div>
+
+    <div class="filter-group">
+      <label for="level">Severity</label>
+      <select id="level" formControlName="level" aria-label="Filter by severity">
+        <option value="">All</option>
+        <option value="ERROR">ERROR</option>
+        <option value="WARN">WARN</option>
+        <option value="INFO">INFO</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label for="from">From</label>
+      <input id="from" type="datetime-local" formControlName="from" />
+    </div>
+
+    <div class="filter-group">
+      <label for="to">To</label>
+      <input id="to" type="datetime-local" formControlName="to" />
+    </div>
+
+    <button type="button" class="reset-btn" (click)="reset()" aria-label="Clear all filters">
+      Clear
+    </button>
+  </div>
+</form>

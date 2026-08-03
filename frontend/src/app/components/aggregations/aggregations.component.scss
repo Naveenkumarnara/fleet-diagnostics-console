@@ -1,0 +1,121 @@
+.agg-wrapper {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  padding: 20px;
+}
+
+.agg-panel {
+  background: #1a1e2e;
+  border: 1px solid #2d3250;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.panel-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #8891aa;
+  margin: 0 0 12px;
+}
+
+.no-data {
+  color: #606880;
+  font-size: 13px;
+  text-align: center;
+  padding: 20px 0;
+}
+
+// Critical vehicles
+.critical-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.critical-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.vehicle-badge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 12px;
+
+  &.critical {
+    background: rgba(255,68,68,0.15);
+    color: #ff7070;
+    border: 1px solid rgba(255,68,68,0.3);
+  }
+}
+
+.error-count { color: #ff7070; font-size: 12px; }
+.last-seen   { color: #606880; font-size: 11px; margin-left: auto; }
+
+// Code bars
+.code-bar-list { display: flex; flex-direction: column; gap: 8px; }
+
+.code-bar-item {}
+
+.code-bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 3px;
+}
+
+.code-name { color: #b0b8e0; font-family: monospace; }
+.code-count { color: #8891aa; }
+
+.bar-track {
+  height: 6px;
+  background: #252a3d;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+  opacity: 0.8;
+}
+
+// Vehicle table
+.vehicle-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+
+  th {
+    text-align: right;
+    padding: 4px 8px;
+    color: #606880;
+    font-weight: 500;
+    border-bottom: 1px solid #2d3250;
+
+    &:first-child { text-align: left; }
+  }
+
+  td {
+    text-align: right;
+    padding: 5px 8px;
+    color: #c8ceea;
+    border-bottom: 1px solid #1e2235;
+
+    &:first-child { text-align: left; color: #d0d6f0; font-weight: 500; }
+  }
+
+  .stat-error { color: #ff7070; }
+  .stat-warn  { color: #ffbb44; }
+  .stat-info  { color: #6699ff; }
+}

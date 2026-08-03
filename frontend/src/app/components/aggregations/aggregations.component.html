@@ -1,0 +1,77 @@
+<div class="agg-wrapper">
+  <!-- Critical vehicles -->
+  <section class="agg-panel" aria-label="Critical vehicles">
+    <h2 class="panel-title">Critical Vehicles</h2>
+    <app-loading-error
+      [loading]="(critical$ | async)?.loading ?? false"
+      [error]="(critical$ | async)?.error ?? null"
+    ></app-loading-error>
+    <ng-container *ngIf="(critical$ | async)?.data as vehicles">
+      <p *ngIf="vehicles.length === 0" class="no-data">No vehicles in critical state right now.</p>
+      <ul class="critical-list" *ngIf="vehicles.length > 0">
+        <li *ngFor="let v of vehicles" class="critical-item">
+          <span class="vehicle-badge critical">{{ v.vehicleId }}</span>
+          <span class="error-count">{{ v.recentErrors }} errors in last 15 min</span>
+          <span class="last-seen">last: {{ v.lastSeen | date:'HH:mm:ss' }}</span>
+        </li>
+      </ul>
+    </ng-container>
+  </section>
+
+  <!-- Top error codes -->
+  <section class="agg-panel" aria-label="Top error codes">
+    <h2 class="panel-title">Top Error Codes</h2>
+    <app-loading-error
+      [loading]="(codeSummary$ | async)?.loading ?? false"
+      [error]="(codeSummary$ | async)?.error ?? null"
+    ></app-loading-error>
+    <ng-container *ngIf="(codeSummary$ | async)?.data as codes">
+      <div class="code-bar-list">
+        <div *ngFor="let c of codes.slice(0, 10)" class="code-bar-item">
+          <div class="code-bar-label">
+            <span class="code-name">{{ c.code }}</span>
+            <span class="code-count">{{ c.count }}</span>
+          </div>
+          <div class="bar-track">
+            <div
+              class="bar-fill"
+              [style.width.%]="(c.count / maxCount(codes)) * 100"
+              [style.background]="levelColor(c.level)"
+            ></div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+  </section>
+
+  <!-- Vehicle summary -->
+  <section class="agg-panel" aria-label="Events by vehicle">
+    <h2 class="panel-title">Events by Vehicle</h2>
+    <app-loading-error
+      [loading]="(vehicleStats$ | async)?.loading ?? false"
+      [error]="(vehicleStats$ | async)?.error ?? null"
+    ></app-loading-error>
+    <ng-container *ngIf="(vehicleStats$ | async)?.data as stats">
+      <table class="vehicle-table" aria-label="Events per vehicle">
+        <thead>
+          <tr>
+            <th scope="col">Vehicle</th>
+            <th scope="col">Errors</th>
+            <th scope="col">Warns</th>
+            <th scope="col">Info</th>
+            <th scope="col">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let v of stats.slice(0, 15)">
+            <td>{{ v.vehicleId }}</td>
+            <td class="stat-error">{{ v.errorCount }}</td>
+            <td class="stat-warn">{{ v.warnCount }}</td>
+            <td class="stat-info">{{ v.infoCount }}</td>
+            <td>{{ v.total }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </ng-container>
+  </section>
+</div>

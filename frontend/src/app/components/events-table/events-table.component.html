@@ -1,0 +1,46 @@
+<div class="table-wrapper">
+  <app-loading-error
+    [loading]="(state$ | async)?.loading ?? false"
+    [error]="(state$ | async)?.error ?? null"
+  ></app-loading-error>
+
+  <ng-container *ngIf="(state$ | async) as state">
+    <ng-container *ngIf="state.data as result">
+      <div class="table-meta">
+        <span class="count">{{ result.total | number }} events</span>
+        <div class="pagination" *ngIf="result.total > fleet.pageSize">
+          <button (click)="prevPage()" [disabled]="currentPage === 0" aria-label="Previous page">‹</button>
+          <span>Page {{ currentPage + 1 }} of {{ (totalPages$ | async) }}</span>
+          <button (click)="nextPage(result.total)" [disabled]="currentPage >= (totalPages$ | async)! - 1" aria-label="Next page">›</button>
+        </div>
+      </div>
+
+      <table aria-label="Diagnostic events">
+        <thead>
+          <tr>
+            <th scope="col">Timestamp</th>
+            <th scope="col">Vehicle</th>
+            <th scope="col">Severity</th>
+            <th scope="col">Code</th>
+            <th scope="col">Subsystem</th>
+            <th scope="col">Message</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let event of result.data" [class]="levelClass(event.level)">
+            <td class="mono">{{ event.timestamp | date:'yyyy-MM-dd HH:mm:ss' }}</td>
+            <td class="vehicle-id">{{ event.vehicleId }}</td>
+            <td><span class="level-badge" [attr.data-level]="event.level">{{ event.level }}</span></td>
+            <td class="mono code">{{ event.code }}</td>
+            <td class="subsystem">{{ event.subsystem ?? '—' }}</td>
+            <td class="message">{{ event.message }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p *ngIf="result.data.length === 0 && !state.loading" class="empty">
+        No events match the current filters.
+      </p>
+    </ng-container>
+  </ng-container>
+</div>

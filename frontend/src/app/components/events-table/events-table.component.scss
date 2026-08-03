@@ -1,0 +1,114 @@
+.table-wrapper {
+  flex: 1;
+  overflow: auto;
+  padding: 0 20px 20px;
+}
+
+.table-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0 8px;
+  font-size: 13px;
+  color: #8891aa;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  button {
+    background: #252a3d;
+    border: 1px solid #3a4060;
+    color: #d0d6f0;
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+
+    &:disabled { opacity: 0.35; cursor: default; }
+    &:not(:disabled):hover { border-color: #5c7cfa; }
+    &:focus-visible { outline: 2px solid #5c7cfa; outline-offset: 2px; }
+  }
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+
+  thead tr {
+    background: #1a1e2e;
+    border-bottom: 1px solid #2d3250;
+  }
+
+  th {
+    text-align: left;
+    padding: 8px 12px;
+    color: #8891aa;
+    font-weight: 500;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid #1e2235;
+    transition: background 0.1s;
+
+    &:hover { background: #1e2338; }
+
+    &.error { border-left: 2px solid #ff4444; }
+    &.warn  { border-left: 2px solid #ffaa00; }
+    &.info  { border-left: 2px solid #4488ff; }
+  }
+
+  td {
+    padding: 7px 12px;
+    color: #c8ceea;
+    vertical-align: top;
+  }
+}
+
+.mono {
+  font-family: 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 12px;
+}
+
+.vehicle-id {
+  font-weight: 600;
+  color: #d0d6f0;
+}
+
+.code { color: #b0b8e0; }
+
+.subsystem {
+  font-size: 12px;
+  color: #707890;
+}
+
+.message { max-width: 340px; }
+
+.level-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+
+  &[data-level="ERROR"] { background: rgba(255,68,68,0.15); color: #ff7070; }
+  &[data-level="WARN"]  { background: rgba(255,170,0,0.15); color: #ffbb44; }
+  &[data-level="INFO"]  { background: rgba(68,136,255,0.15); color: #6699ff; }
+}
+
+.empty {
+  text-align: center;
+  color: #606880;
+  padding: 40px;
+  font-size: 14px;
+}
