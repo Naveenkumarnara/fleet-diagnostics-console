@@ -2,7 +2,27 @@
 
 A fullstack dashboard for monitoring connected vehicles in near-real time. Operations engineers can filter diagnostic events by vehicle, code, severity, and time range; see aggregated stats; and watch live events arrive without losing their current filter state.
 
-## Prerequisites
+## Running with Docker
+
+```bash
+docker compose up --build
+```
+
+Open http://localhost. The frontend is served by nginx on port 80; it proxies `/api/` requests to the backend container. The SQLite database is persisted in a Docker named volume (`fleet-db`) across restarts.
+
+To seed historical data inside the running container:
+```bash
+docker compose exec backend node -e "
+  const { IngestionService } = require('./dist/ingestion/ingestion.service');
+  // use the seed script instead:
+"
+# easier: run the seed script before starting compose
+cd backend && npm run seed && cd .. && docker compose up --build
+```
+
+Or just let the live generator run — it generates an event every 4 seconds automatically.
+
+## Prerequisites (dev mode)
 
 - Node.js 22+ (uses the built-in `node:sqlite` — no native build tools required)
 - npm 10+
