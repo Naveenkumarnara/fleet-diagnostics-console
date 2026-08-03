@@ -6,7 +6,7 @@
 
 ```
 backend/src/
-  database/      DatabaseService — node:sqlite wrapper, migration on startup
+  database/      DatabaseService — better-sqlite3 wrapper, migration on startup
   parser/        ParserService — log line → ParsedEvent, subsystem tagging
   events/        EventsRepository, EventsService, EventsController + DTOs
   ingestion/     IngestionService — seed logic + interval-based live generator
@@ -35,7 +35,7 @@ Indexes on `vehicle_id`, `level`, `code`, `timestamp` — the four dimensions of
 
 ### Key decisions
 
-**SQLite via `node:sqlite`** — Node 22+ includes a built-in synchronous SQLite driver with no native compilation required. On this system there are no VS Build Tools, so native add-ons (like `better-sqlite3`) fail to compile. `node:sqlite` has the same synchronous API style, which suits NestJS's request/response model well.
+**SQLite via `better-sqlite3`** — Synchronous, battle-tested, and well-typed. The synchronous API suits NestJS's request/response model well — no async/await noise in the repository layer. `db.transaction()` wraps bulk inserts cleanly. Requires a native compile on install (VS Build Tools on Windows, gcc on Linux/Docker).
 
 **SSE over WebSocket** — One-directional, standard HTTP, no additional libraries. The backend uses an RxJS `Subject` that multicasts to all connected `EventSource` clients. Each request to `GET /events/stream` subscribes to that subject and receives events as `data:` payloads.
 

@@ -24,7 +24,8 @@ Or just let the live generator run — it generates an event every 4 seconds aut
 
 ## Prerequisites (dev mode)
 
-- Node.js 22+ (uses the built-in `node:sqlite` — no native build tools required)
+- Node.js 18+ (22+ recommended)
+- Windows: Visual Studio Build Tools 2022 with the "Desktop development with C++" workload (required to compile `better-sqlite3`)
 - npm 10+
 - Angular CLI: `npm install -g @angular/cli`
 - NestJS CLI: `npm install -g @nestjs/cli`
@@ -104,6 +105,6 @@ Available at http://localhost:3000/api/docs when the backend is running. No stat
 
 ## Technical notes
 
-The backend uses Node.js's built-in `node:sqlite` module (available since Node 22) rather than `better-sqlite3`. This avoids the need for Windows/Linux build tools to compile the native addon, at the cost of slightly less ecosystem maturity. The API is essentially identical: synchronous, prepared statements, transactions.
+The backend uses `better-sqlite3` for SQLite access — synchronous, prepared statements, and native `db.transaction()` support. It compiles a native addon on install, so Windows requires VS Build Tools 2022 with the C++ workload. Docker builds work out of the box (Alpine has gcc).
 
 Pagination is offset-based. A `// TODO: cursor pagination for large datasets` note is in the repo but not implemented.
