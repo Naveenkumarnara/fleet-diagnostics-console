@@ -1,14 +1,16 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { DatabaseSync } from 'node:sqlite';
+import Database from 'better-sqlite3';
 import * as path from 'path';
 
 @Injectable()
 export class DatabaseService implements OnModuleInit, OnModuleDestroy {
-  private db: DatabaseSync;
+  private db: Database.Database;
 
   onModuleInit() {
     const dbPath = process.env.DB_PATH ?? path.join(process.cwd(), 'fleet.db');
-    this.db = new DatabaseSync(dbPath);
+    this.db = new Database(dbPath);
+    this.db.pragma('journal_mode = WAL');
+    this.db.pragma('foreign_keys = ON');
     this.migrate();
   }
 
@@ -16,15 +18,12 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     this.db?.close();
   }
 
-  get connection(): DatabaseSync {
+  get connection(): Database.Database {
     return this.db;
   }
 
   private migrate() {
     this.db.exec(`
-      PRAGMA journal_mode=WAL;
-      PRAGMA foreign_keys=ON;
-
       CREATE TABLE IF NOT EXISTS diagnostic_events (
         id          INTEGER PRIMARY KEY AUTOINCREMENT,
         timestamp   TEXT    NOT NULL,

@@ -26,6 +26,8 @@
     "@nestjs/event-emitter": "^3.1.0",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/swagger": "^11.4.6",
+    "@types/better-sqlite3": "^7.6.12",
+    "better-sqlite3": "^11.10.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "date-fns": "^4.4.0",

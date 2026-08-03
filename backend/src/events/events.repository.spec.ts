@@ -1,15 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { DatabaseSync } from 'node:sqlite';
+import Database from 'better-sqlite3';
 import { DatabaseService } from '../database/database.service';
 import { EventsRepository } from './events.repository';
 
 class TestDatabaseService {
-  private db: DatabaseSync;
+  private db: Database.Database;
 
   onModuleInit() {
-    this.db = new DatabaseSync(':memory:');
+    this.db = new Database(':memory:');
+    this.db.pragma('journal_mode = WAL');
     this.db.exec(`
-      PRAGMA journal_mode=WAL;
       CREATE TABLE diagnostic_events (
         id          INTEGER PRIMARY KEY AUTOINCREMENT,
         timestamp   TEXT    NOT NULL,

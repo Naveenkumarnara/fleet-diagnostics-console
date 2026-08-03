@@ -42,11 +42,10 @@ export class EventsRepository {
   constructor(private readonly db: DatabaseService) {}
 
   insert(event: ParsedEvent): number {
-    const stmt = this.db.connection.prepare(`
+    const result = this.db.connection.prepare(`
       INSERT INTO diagnostic_events (timestamp, vehicle_id, level, code, message, subsystem, mileage)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-    const result = stmt.run(
+    `).run(
       event.timestamp.toISOString(),
       event.vehicleId,
       event.level,
@@ -63,17 +62,12 @@ export class EventsRepository {
       INSERT INTO diagnostic_events (timestamp, vehicle_id, level, code, message, subsystem, mileage)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
-    // node:sqlite doesn't expose transaction() directly — wrap in BEGIN/COMMIT
-    this.db.connection.exec('BEGIN');
-    try {
-      for (const e of events) {
+    const tx = this.db.connection.transaction((evts: ParsedEvent[]) => {
+      for (const e of evts) {
         insert.run(e.timestamp.toISOString(), e.vehicleId, e.level, e.code, e.message, e.subsystem ?? null, null);
       }
-      this.db.connection.exec('COMMIT');
-    } catch (err) {
-      this.db.connection.exec('ROLLBACK');
-      throw err;
-    }
+    });
+    tx(events);
   }
 
   findMany(filters: EventFilters): { data: DiagnosticEvent[]; total: number } {
@@ -92,9 +86,9 @@ export class EventsRepository {
          ORDER BY timestamp DESC
          LIMIT ? OFFSET ?`,
       )
-      .all(...params, limit, offset) as unknown as DiagnosticEvent[];
+      .all(...params, limit, offset) as DiagnosticEvent[];
 
-    return { data: rows, total: Number(countRow.cnt) };
+    return { data: rows, total: countRow.cnt };
   }
 
   statsByVehicle(from?: string, to?: string): VehicleStats[] {
@@ -114,27 +108,17 @@ export class EventsRepository {
       FROM diagnostic_events${where}
       GROUP BY vehicle_id
       ORDER BY errorCount DESC
-    `).all(...params) as unknown as VehicleStats[]).map((r) => ({
-      vehicleId: r.vehicleId,
-      errorCount: Number(r.errorCount),
-      warnCount: Number(r.warnCount),
-      infoCount: Number(r.infoCount),
-      total: Number(r.total),
-    }));
+    `).all(...params) as VehicleStats[]);
   }
 
   statsByCode(limit = 20): CodeStats[] {
-    return (this.db.connection.prepare(`
+    return this.db.connection.prepare(`
       SELECT code, COUNT(*) as count, level
       FROM diagnostic_events
       GROUP BY code, level
       ORDER BY count DESC
       LIMIT ?
-    `).all(limit) as unknown as CodeStats[]).map((r) => ({
-      code: r.code,
-      count: Number(r.count),
-      level: r.level,
-    }));
+    `).all(limit) as CodeStats[];
   }
 
   // "Critical" = vehicle with >= 3 ERROR events in the last 15 minutes.
@@ -144,18 +128,14 @@ export class EventsRepository {
     const threshold = parseInt(process.env.CRITICAL_ERROR_THRESHOLD ?? '3', 10);
     const since = new Date(Date.now() - windowMinutes * 60_000).toISOString();
 
-    return (this.db.connection.prepare(`
+    return this.db.connection.prepare(`
       SELECT vehicle_id as vehicleId, COUNT(*) as recentErrors, MAX(timestamp) as lastSeen
       FROM diagnostic_events
       WHERE level = 'ERROR' AND timestamp >= ?
       GROUP BY vehicle_id
       HAVING recentErrors >= ?
       ORDER BY recentErrors DESC
-    `).all(since, threshold) as unknown as { vehicleId: string; recentErrors: number; lastSeen: string }[]).map((r) => ({
-      vehicleId: r.vehicleId,
-      recentErrors: Number(r.recentErrors),
-      lastSeen: r.lastSeen,
-    }));
+    `).all(since, threshold) as { vehicleId: string; recentErrors: number; lastSeen: string }[];
   }
 
   private buildWhere(filters: EventFilters): { where: string; params: (string | number)[] } {

@@ -2,7 +2,7 @@
  * Standalone seed script — runs outside NestJS DI so it can be invoked directly.
  * Usage: npx ts-node scripts/seed.ts [days] [eventsPerDay]
  */
-import { DatabaseSync } from 'node:sqlite';
+import Database from 'better-sqlite3';
 import * as path from 'path';
 
 const VEHICLE_IDS = [
@@ -45,10 +45,10 @@ const days = parseInt(process.argv[2] ?? '7', 10);
 const eventsPerDay = parseInt(process.argv[3] ?? '300', 10);
 
 const dbPath = process.env.DB_PATH ?? path.join(process.cwd(), 'fleet.db');
-const db = new DatabaseSync(dbPath);
+const db = new Database(dbPath);
+db.pragma('journal_mode = WAL');
 
 db.exec(`
-  PRAGMA journal_mode=WAL;
   CREATE TABLE IF NOT EXISTS diagnostic_events (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     timestamp   TEXT    NOT NULL,
@@ -87,11 +87,12 @@ for (let d = 0; d < days; d++) {
 
 events.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
 
-db.exec('BEGIN');
-for (const e of events) {
-  insert.run(e.timestamp, e.vehicleId, e.level, e.code, e.message, e.subsystem);
-}
-db.exec('COMMIT');
+const tx = db.transaction((rows: typeof events) => {
+  for (const e of rows) {
+    insert.run(e.timestamp, e.vehicleId, e.level, e.code, e.message, e.subsystem);
+  }
+});
+tx(events);
 
 console.log(`Seeded ${events.length} events (${days} days, ~${eventsPerDay}/day) into ${dbPath}`);
 db.close();
