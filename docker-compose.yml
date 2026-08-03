@@ -1,0 +1,29 @@
+services:
+  backend:
+    build: ./backend
+    environment:
+      PORT: "3000"
+      DB_PATH: /app/data/fleet.db
+      CORS_ORIGIN: "http://localhost"
+      CRITICAL_WINDOW_MINUTES: "15"
+      CRITICAL_ERROR_THRESHOLD: "3"
+      LIVE_INTERVAL_MS: "4000"
+    volumes:
+      # Persist the SQLite database across container restarts
+      - fleet-db:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/events?limit=1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  fleet-db:
