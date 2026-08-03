@@ -1,0 +1,180 @@
+import { Injectable } from '@nestjs/common';
+import { DatabaseService } from '../database/database.service';
+import { ParsedEvent } from '../parser/parser.service';
+
+export interface DiagnosticEvent {
+  id: number;
+  timestamp: string;
+  vehicleId: string;
+  level: 'ERROR' | 'WARN' | 'INFO';
+  code: string;
+  message: string;
+  subsystem: string | null;
+  mileage: number | null;
+}
+
+export interface EventFilters {
+  vehicleIds?: string[];
+  code?: string;
+  level?: string;
+  from?: string;
+  to?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface VehicleStats {
+  vehicleId: string;
+  errorCount: number;
+  warnCount: number;
+  infoCount: number;
+  total: number;
+}
+
+export interface CodeStats {
+  code: string;
+  count: number;
+  level: string;
+}
+
+@Injectable()
+export class EventsRepository {
+  constructor(private readonly db: DatabaseService) {}
+
+  insert(event: ParsedEvent): number {
+    const stmt = this.db.connection.prepare(`
+      INSERT INTO diagnostic_events (timestamp, vehicle_id, level, code, message, subsystem, mileage)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+    const result = stmt.run(
+      event.timestamp.toISOString(),
+      event.vehicleId,
+      event.level,
+      event.code,
+      event.message,
+      event.subsystem ?? null,
+      null,
+    );
+    return Number(result.lastInsertRowid);
+  }
+
+  insertMany(events: ParsedEvent[]): void {
+    const insert = this.db.connection.prepare(`
+      INSERT INTO diagnostic_events (timestamp, vehicle_id, level, code, message, subsystem, mileage)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+    // node:sqlite doesn't expose transaction() directly — wrap in BEGIN/COMMIT
+    this.db.connection.exec('BEGIN');
+    try {
+      for (const e of events) {
+        insert.run(e.timestamp.toISOString(), e.vehicleId, e.level, e.code, e.message, e.subsystem ?? null, null);
+      }
+      this.db.connection.exec('COMMIT');
+    } catch (err) {
+      this.db.connection.exec('ROLLBACK');
+      throw err;
+    }
+  }
+
+  findMany(filters: EventFilters): { data: DiagnosticEvent[]; total: number } {
+    const { where, params } = this.buildWhere(filters);
+    const limit = filters.limit ?? 50;
+    const offset = filters.offset ?? 0;
+
+    const countRow = this.db.connection
+      .prepare(`SELECT COUNT(*) as cnt FROM diagnostic_events${where}`)
+      .get(...params) as { cnt: number };
+
+    const rows = this.db.connection
+      .prepare(
+        `SELECT id, timestamp, vehicle_id as vehicleId, level, code, message, subsystem, mileage
+         FROM diagnostic_events${where}
+         ORDER BY timestamp DESC
+         LIMIT ? OFFSET ?`,
+      )
+      .all(...params, limit, offset) as unknown as DiagnosticEvent[];
+
+    return { data: rows, total: Number(countRow.cnt) };
+  }
+
+  statsByVehicle(from?: string, to?: string): VehicleStats[] {
+    const conds: string[] = [];
+    const params: (string | number)[] = [];
+    if (from) { conds.push('timestamp >= ?'); params.push(from); }
+    if (to)   { conds.push('timestamp <= ?'); params.push(to); }
+    const where = conds.length ? ' WHERE ' + conds.join(' AND ') : '';
+
+    return (this.db.connection.prepare(`
+      SELECT
+        vehicle_id as vehicleId,
+        SUM(CASE WHEN level='ERROR' THEN 1 ELSE 0 END) as errorCount,
+        SUM(CASE WHEN level='WARN'  THEN 1 ELSE 0 END) as warnCount,
+        SUM(CASE WHEN level='INFO'  THEN 1 ELSE 0 END) as infoCount,
+        COUNT(*) as total
+      FROM diagnostic_events${where}
+      GROUP BY vehicle_id
+      ORDER BY errorCount DESC
+    `).all(...params) as unknown as VehicleStats[]).map((r) => ({
+      vehicleId: r.vehicleId,
+      errorCount: Number(r.errorCount),
+      warnCount: Number(r.warnCount),
+      infoCount: Number(r.infoCount),
+      total: Number(r.total),
+    }));
+  }
+
+  statsByCode(limit = 20): CodeStats[] {
+    return (this.db.connection.prepare(`
+      SELECT code, COUNT(*) as count, level
+      FROM diagnostic_events
+      GROUP BY code, level
+      ORDER BY count DESC
+      LIMIT ?
+    `).all(limit) as unknown as CodeStats[]).map((r) => ({
+      code: r.code,
+      count: Number(r.count),
+      level: r.level,
+    }));
+  }
+
+  // "Critical" = vehicle with >= 3 ERROR events in the last 15 minutes.
+  // Both thresholds are env-configurable.
+  criticalVehicles(): { vehicleId: string; recentErrors: number; lastSeen: string }[] {
+    const windowMinutes = parseInt(process.env.CRITICAL_WINDOW_MINUTES ?? '15', 10);
+    const threshold = parseInt(process.env.CRITICAL_ERROR_THRESHOLD ?? '3', 10);
+    const since = new Date(Date.now() - windowMinutes * 60_000).toISOString();
+
+    return (this.db.connection.prepare(`
+      SELECT vehicle_id as vehicleId, COUNT(*) as recentErrors, MAX(timestamp) as lastSeen
+      FROM diagnostic_events
+      WHERE level = 'ERROR' AND timestamp >= ?
+      GROUP BY vehicle_id
+      HAVING recentErrors >= ?
+      ORDER BY recentErrors DESC
+    `).all(since, threshold) as unknown as { vehicleId: string; recentErrors: number; lastSeen: string }[]).map((r) => ({
+      vehicleId: r.vehicleId,
+      recentErrors: Number(r.recentErrors),
+      lastSeen: r.lastSeen,
+    }));
+  }
+
+  private buildWhere(filters: EventFilters): { where: string; params: (string | number)[] } {
+    const conds: string[] = [];
+    const params: (string | number)[] = [];
+
+    if (filters.vehicleIds?.length) {
+      const placeholders = filters.vehicleIds.map(() => '?').join(',');
+      conds.push(`vehicle_id IN (${placeholders})`);
+      params.push(...filters.vehicleIds);
+    }
+    if (filters.code) { conds.push('code = ?'); params.push(filters.code); }
+    if (filters.level) { conds.push('level = ?'); params.push(filters.level.toUpperCase()); }
+    if (filters.from)  { conds.push('timestamp >= ?'); params.push(filters.from); }
+    if (filters.to)    { conds.push('timestamp <= ?'); params.push(filters.to); }
+
+    return {
+      where: conds.length ? ' WHERE ' + conds.join(' AND ') : '',
+      params,
+    };
+  }
+}
