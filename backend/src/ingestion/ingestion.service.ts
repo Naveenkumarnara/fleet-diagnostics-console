@@ -1,4 +1,5 @@
 import { Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { EventsRepository } from '../events/events.repository';
 import { SseService } from '../sse/sse.service';
 import { ParserService } from '../parser/parser.service';
@@ -41,6 +42,7 @@ export class IngestionService implements OnApplicationBootstrap, OnApplicationSh
     private readonly repo: EventsRepository,
     private readonly sse: SseService,
     private readonly parser: ParserService,
+    private readonly config: ConfigService,
   ) {}
 
   onApplicationBootstrap() {
@@ -52,7 +54,7 @@ export class IngestionService implements OnApplicationBootstrap, OnApplicationSh
   }
 
   private startLiveStream() {
-    const intervalMs = parseInt(process.env.LIVE_INTERVAL_MS ?? '4000', 10);
+    const intervalMs = this.config.get<number>('liveIntervalMs')!;
     this.liveTimer = setInterval(() => {
       const event = this.generateEvent(new Date());
       const id = this.repo.insert(event);

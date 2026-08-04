@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { DatabaseService } from '../database/database.service';
 import { ParsedEvent } from '../parser/parser.service';
 
@@ -39,7 +40,10 @@ export interface CodeStats {
 
 @Injectable()
 export class EventsRepository {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly config: ConfigService,
+  ) {}
 
   insert(event: ParsedEvent): number {
     const result = this.db.connection.prepare(`
@@ -124,8 +128,8 @@ export class EventsRepository {
   // "Critical" = vehicle with >= 3 ERROR events in the last 15 minutes.
   // Both thresholds are env-configurable.
   criticalVehicles(): { vehicleId: string; recentErrors: number; lastSeen: string }[] {
-    const windowMinutes = parseInt(process.env.CRITICAL_WINDOW_MINUTES ?? '15', 10);
-    const threshold = parseInt(process.env.CRITICAL_ERROR_THRESHOLD ?? '3', 10);
+    const windowMinutes = this.config.get<number>('criticalWindowMinutes')!;
+    const threshold     = this.config.get<number>('criticalErrorThreshold')!;
     const since = new Date(Date.now() - windowMinutes * 60_000).toISOString();
 
     return this.db.connection.prepare(`

@@ -1,13 +1,15 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import Database from 'better-sqlite3';
-import * as path from 'path';
 
 @Injectable()
 export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   private db: Database.Database;
 
+  constructor(private readonly config: ConfigService) {}
+
   onModuleInit() {
-    const dbPath = process.env.DB_PATH ?? path.join(process.cwd(), 'fleet.db');
+    const dbPath = this.config.get<string>('dbPath')!;
     this.db = new Database(dbPath);
     this.db.pragma('journal_mode = WAL');
     this.db.pragma('foreign_keys = ON');
