@@ -5,7 +5,7 @@
 1. Operations engineers need a real-time view of diagnostic events across a fleet of connected vehicles.
 2. Events must be filterable by vehicle ID (one or many), error code, severity, and time range simultaneously.
 3. The system must surface which vehicles are currently in a "critical" state — defined as having received 3 or more ERROR-level events within the last 15 minutes. Both thresholds must be configurable without a code change.
-4. Aggregated views (most frequent codes, per-vehicle error counts) must update when the time range filter changes.
+4. All aggregated views (most frequent codes, per-vehicle error counts) must update when the time range filter changes — including the top codes chart.
 5. Live events from vehicles must appear in the UI without requiring a manual page refresh; the user should be informed before their current view is disrupted.
 6. The system must support querying historical data across multiple days.
 7. The API must reject malformed query parameters with a meaningful error, not a 500.
@@ -32,6 +32,13 @@
 
 **SQLite vs PostgreSQL**
 - SQLite keeps the setup to a single `npm install` with no external process. For a portfolio project demonstrating querying and aggregation, it's fine. A real fleet deployment would want PostgreSQL (concurrent writes, replication). Noted in README.
+
+**Config validation**
+- All environment variables are validated at startup via a Joi schema in `AppModule`. Misconfigured values (e.g. `LIVE_INTERVAL_MS=abc`) abort boot with a clear message rather than silently falling back to defaults.
+
+**Error handling**
+- The API returns a consistent error shape (`statusCode`, `message`, `path`, `timestamp`) for all failures — validation errors, not-found, and unexpected server errors — via a global `AllExceptionsFilter`.
+- The frontend maps HTTP errors to a `LoadState.error` string so the UI always gives feedback instead of hanging on a spinner.
 
 **Frontend state management**
 - Used RxJS + a service (no NgRx). NgRx adds significant boilerplate for this scale; the state is simple enough that a service with BehaviorSubjects and reactive derivations is cleaner and easier to trace. The choice is documented in concept.md.
