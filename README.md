@@ -10,17 +10,13 @@ docker compose up --build
 
 Open http://localhost. The frontend is served by nginx on port 80; it proxies `/api/` requests to the backend container. The SQLite database is persisted in a Docker named volume (`fleet-db`) across restarts.
 
-To seed historical data inside the running container:
+To pre-populate historical data before starting:
 ```bash
-docker compose exec backend node -e "
-  const { IngestionService } = require('./dist/ingestion/ingestion.service');
-  // use the seed script instead:
-"
-# easier: run the seed script before starting compose
-cd backend && npm run seed && cd .. && docker compose up --build
+cd backend && npm run seed
+cd .. && docker compose up --build
 ```
 
-Or just let the live generator run — it generates an event every 4 seconds automatically.
+Or just let the live generator run — it inserts an event every 4 seconds automatically once the backend starts.
 
 ## Prerequisites (dev mode)
 
@@ -63,11 +59,14 @@ The live generator starts automatically with the backend (default: one event eve
 ## Running tests
 
 ```bash
-cd backend
-npm test
+# backend — parser, repository queries, critical aggregation logic
+cd backend && npm test
+
+# frontend — state service reactive chains, search panel wiring
+cd frontend && ng test --watch=false
 ```
 
-This runs 15 unit tests covering the parser, the query/filter logic, and the "critical" aggregation. Frontend tests are pending (see "What I'd do next").
+32 tests total: 14 backend, 18 frontend.
 
 ## API docs (Swagger)
 
@@ -86,22 +85,25 @@ Available at http://localhost:3000/api/docs when the backend is running. No stat
 
 ## What currently works
 
-- Full REST API: `GET /events` with all filter combinations, `/stats/by-vehicle`, `/stats/by-code`, `/critical`
-- Server-Sent Events stream at `/events/stream`
-- Seed script + background live generator
-- Angular dashboard: filter panel, paginated events table, aggregations view (critical vehicles, top codes bar chart, per-vehicle table)
-- Live update banner: counts incoming events, lets you reload without disrupting the current view
-- 15 backend unit tests
+- REST API with all filter combinations — `GET /api/events`, `/stats/by-vehicle`, `/stats/by-code`, `/critical`; all aggregation endpoints accept `from`/`to` time range
+- `GET /api/health` — db connectivity check and uptime
+- Consistent error shape on every bad request: `{ statusCode, message, path, timestamp }`
+- Request logging on every HTTP call: method, path, status, duration
+- Config validated at startup via Joi — bad env values fail fast with a clear message
+- Server-Sent Events stream at `/api/events/stream`
+- Seed script + background live generator (one event every 4s)
+- Angular dashboard: reactive filter panel, paginated events table, aggregations (critical vehicles, top codes, per-vehicle breakdown) — all views respect the active time range
+- Live update banner: counts incoming SSE events, reloads all views on demand without disrupting current filters
+- Error state propagated to the UI — API failures show a message instead of a frozen spinner
+- 32 tests: 14 backend (parser, filters, critical logic), 18 frontend (state service reactive chains, search panel wiring)
 
 ## What I'd do next
 
-- **Frontend tests**: the Angular side has no tests yet. Priority would be a state service spec testing the switchMap/debounce behavior, then component tests for the filter panel.
 - **Cursor pagination**: offset pagination scans the full result set for each page. Fine for 2K–20K rows but would need cursor-based pagination for larger datasets.
 - **Auth**: currently zero auth. A real deployment would need at minimum an API key or JWT on the backend.
 - **Error recovery in SSE**: the frontend EventSource reconnects automatically on error, but there's no handling for missed events during a gap. A sequence ID and "fetch missed events since sequence N" pattern would fix this.
 - **E2E tests**: no Playwright or Cypress setup yet. Would want at minimum: "filter by vehicle ID → correct events shown" and "live banner appears → click load → table refreshes".
 - **PostgreSQL**: SQLite is fine for a single-server demo but doesn't support concurrent writes from multiple backend instances. Real fleet deployments would want Postgres.
-- **Docker**: docker-compose.yml would simplify dev setup significantly, especially for CI.
 
 ## Technical notes
 
