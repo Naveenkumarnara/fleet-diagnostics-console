@@ -5,7 +5,9 @@ import {
   Observable,
   Subject,
 } from 'rxjs';
+import { of } from 'rxjs';
 import {
+  catchError,
   debounceTime,
   distinctUntilChanged,
   map,
@@ -40,7 +42,9 @@ export class FleetStateService {
   private readonly page$       = new BehaviorSubject<number>(0);
   readonly pageSize = 50;
 
-  private readonly pendingCount$ = new BehaviorSubject<number>(0);
+  private readonly pendingCount$    = new BehaviorSubject<number>(0);
+  // Incrementing this triggers a reload of all streams without changing filter state
+  private readonly refreshTrigger$  = new BehaviorSubject<number>(0);
 
   readonly activeFilters$: Observable<EventFilters>;
   readonly events$: Observable<LoadState<EventsResponse>>;
@@ -58,6 +62,7 @@ export class FleetStateService {
       this.from$.pipe(debounceTime(400), distinctUntilChanged()),
       this.to$.pipe(debounceTime(400), distinctUntilChanged()),
       this.page$.pipe(distinctUntilChanged()),
+      this.refreshTrigger$.pipe(distinctUntilChanged()),
     ]).pipe(
       map(([vehicleIds, code, level, from, to, page]) => ({
         vehicleIds,
@@ -75,6 +80,7 @@ export class FleetStateService {
       switchMap((filters) =>
         this.api.getEvents(filters).pipe(
           map((data) => ({ data, loading: false, error: null })),
+          catchError((err: Error) => of({ data: null, loading: false, error: err.message ?? 'Failed to load events' })),
           startWith({ data: null, loading: true, error: null }),
         )
       ),
@@ -85,21 +91,34 @@ export class FleetStateService {
       switchMap((filters) =>
         this.api.getStatsByVehicle(filters.from, filters.to).pipe(
           map((data) => ({ data, loading: false, error: null })),
+          catchError((err: Error) => of({ data: null, loading: false, error: err.message ?? 'Failed to load vehicle stats' })),
           startWith({ data: null, loading: true, error: null }),
         )
       ),
       shareReplay(1),
     );
 
-    this.codeSummary$ = this.api.getStatsByCode().pipe(
-      map((data) => ({ data, loading: false, error: null })),
-      startWith({ data: null, loading: true, error: null }),
+    // codeSummary and critical respond to refreshTrigger so they reload when
+    // the user clicks "Load now" on the live banner
+    this.codeSummary$ = this.refreshTrigger$.pipe(
+      switchMap(() =>
+        this.api.getStatsByCode().pipe(
+          map((data) => ({ data, loading: false, error: null })),
+          catchError((err: Error) => of({ data: null, loading: false, error: err.message ?? 'Failed to load code stats' })),
+          startWith({ data: null, loading: true, error: null }),
+        )
+      ),
       shareReplay(1),
     );
 
-    this.critical$ = this.api.getCritical().pipe(
-      map((data) => ({ data, loading: false, error: null })),
-      startWith({ data: null, loading: true, error: null }),
+    this.critical$ = this.refreshTrigger$.pipe(
+      switchMap(() =>
+        this.api.getCritical().pipe(
+          map((data) => ({ data, loading: false, error: null })),
+          catchError((err: Error) => of({ data: null, loading: false, error: err.message ?? 'Failed to load critical vehicles' })),
+          startWith({ data: null, loading: true, error: null }),
+        )
+      ),
       shareReplay(1),
     );
 
@@ -110,7 +129,6 @@ export class FleetStateService {
 
     this.pendingLiveCount$ = this.pendingCount$.asObservable();
 
-    // Kick off live stream on startup
     this.liveStream$.subscribe();
   }
 
@@ -123,8 +141,7 @@ export class FleetStateService {
 
   applyLiveUpdates() {
     this.pendingCount$.next(0);
-    // Re-trigger by poking the page — keeps current page, just refreshes
-    this.page$.next(this.page$.value);
+    this.refreshTrigger$.next(this.refreshTrigger$.value + 1);
   }
 
   get currentFilters(): EventFilters {
