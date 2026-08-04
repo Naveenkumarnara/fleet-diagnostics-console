@@ -1,6 +1,8 @@
 node_modules
 dist
+scripts
 *.db
 *.db-wal
 *.db-shm
 .env
+.git
