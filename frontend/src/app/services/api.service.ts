@@ -26,6 +26,8 @@ export class ApiService {
     if (filters.to)     params = params.set('to', filters.to);
     if (filters.limit != null)  params = params.set('limit', filters.limit);
     if (filters.offset != null) params = params.set('offset', filters.offset);
+    if (filters.sortField)      params = params.set('sortField', filters.sortField);
+    if (filters.sortDir)        params = params.set('sortDir', filters.sortDir);
     return this.http.get<EventsResponse>(`${this.base}/events`, { params });
   }
 

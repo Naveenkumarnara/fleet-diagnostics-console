@@ -16,6 +16,9 @@ export interface EventsResponse {
   total: number;
 }
 
+export type SortField = 'timestamp' | 'vehicleId' | 'level' | 'code';
+export type SortDir   = 'asc' | 'desc';
+
 export interface EventFilters {
   vehicleIds: string[];
   code: string;
@@ -24,6 +27,8 @@ export interface EventFilters {
   to: string;
   limit: number;
   offset: number;
+  sortField: SortField;
+  sortDir: SortDir;
 }
 
 export interface VehicleStats {

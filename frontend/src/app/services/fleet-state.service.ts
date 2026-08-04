@@ -24,6 +24,8 @@ import {
   VehicleStats,
   CodeStats,
   CriticalVehicle,
+  SortField,
+  SortDir,
 } from '../models/event.model';
 
 export interface LoadState<T> {
@@ -40,6 +42,8 @@ export class FleetStateService {
   private readonly from$       = new BehaviorSubject<string>('');
   private readonly to$         = new BehaviorSubject<string>('');
   private readonly page$       = new BehaviorSubject<number>(0);
+  private readonly sortField$  = new BehaviorSubject<SortField>('timestamp');
+  private readonly sortDir$    = new BehaviorSubject<SortDir>('desc');
   readonly pageSize = 50;
 
   private readonly pendingCount$    = new BehaviorSubject<number>(0);
@@ -62,9 +66,11 @@ export class FleetStateService {
       this.from$.pipe(debounceTime(400), distinctUntilChanged()),
       this.to$.pipe(debounceTime(400), distinctUntilChanged()),
       this.page$.pipe(distinctUntilChanged()),
+      this.sortField$.pipe(distinctUntilChanged()),
+      this.sortDir$.pipe(distinctUntilChanged()),
       this.refreshTrigger$.pipe(distinctUntilChanged()),
     ]).pipe(
-      map(([vehicleIds, code, level, from, to, page]) => ({
+      map(([vehicleIds, code, level, from, to, page, sortField, sortDir]) => ({
         vehicleIds,
         code,
         level,
@@ -72,6 +78,8 @@ export class FleetStateService {
         to,
         limit: this.pageSize,
         offset: page * this.pageSize,
+        sortField,
+        sortDir,
       })),
       shareReplay(1),
     );
@@ -140,6 +148,15 @@ export class FleetStateService {
   setTo(to: string)            { this.to$.next(to); }
   setPage(page: number)        { this.page$.next(page); }
 
+  setSort(field: SortField, dir: SortDir) {
+    this.sortField$.next(field);
+    this.sortDir$.next(dir);
+    this.page$.next(0);
+  }
+
+  get currentSortField(): SortField { return this.sortField$.value; }
+  get currentSortDir(): SortDir     { return this.sortDir$.value; }
+
   applyLiveUpdates() {
     this.pendingCount$.next(0);
     this.refreshTrigger$.next(this.refreshTrigger$.value + 1);
@@ -154,6 +171,8 @@ export class FleetStateService {
       to: this.to$.value,
       limit: this.pageSize,
       offset: this.page$.value * this.pageSize,
+      sortField: this.sortField$.value,
+      sortDir: this.sortDir$.value,
     };
   }
 
