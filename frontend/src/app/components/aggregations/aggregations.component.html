@@ -1,77 +1,161 @@
-<div class="agg-wrapper">
-  <!-- Critical vehicles -->
-  <section class="agg-panel" aria-label="Critical vehicles">
-    <h2 class="panel-title">Critical Vehicles</h2>
-    <app-loading-error
-      [loading]="(critical$ | async)?.loading ?? false"
-      [error]="(critical$ | async)?.error ?? null"
-    ></app-loading-error>
-    <ng-container *ngIf="(critical$ | async)?.data as vehicles">
-      <p *ngIf="vehicles.length === 0" class="no-data">No vehicles in critical state right now.</p>
-      <ul class="critical-list" *ngIf="vehicles.length > 0">
-        <li *ngFor="let v of vehicles" class="critical-item">
-          <span class="vehicle-badge critical">{{ v.vehicleId }}</span>
-          <span class="error-count">{{ v.recentErrors }} errors in last 15 min</span>
-          <span class="last-seen">last: {{ v.lastSeen | date:'HH:mm:ss' }}</span>
-        </li>
-      </ul>
-    </ng-container>
-  </section>
+<div class="dashboard">
 
-  <!-- Top error codes -->
-  <section class="agg-panel" aria-label="Top error codes">
-    <h2 class="panel-title">Top Error Codes</h2>
-    <app-loading-error
-      [loading]="(codeSummary$ | async)?.loading ?? false"
-      [error]="(codeSummary$ | async)?.error ?? null"
-    ></app-loading-error>
-    <ng-container *ngIf="(codeSummary$ | async)?.data as codes">
-      <div class="code-bar-list">
-        <div *ngFor="let c of codes.slice(0, 10)" class="code-bar-item">
-          <div class="code-bar-label">
-            <span class="code-name">{{ c.code }}</span>
-            <span class="code-count">{{ c.count }}</span>
-          </div>
-          <div class="bar-track">
-            <div
-              class="bar-fill"
-              [style.width.%]="(c.count / maxCount(codes)) * 100"
-              [style.background]="levelColor(c.level)"
-            ></div>
+  <!-- KPI strip -->
+  <div class="kpi-strip" *ngIf="(vehicleStats$ | async)?.data as stats">
+    <div class="kpi-card">
+      <div class="kpi-icon kpi-icon--fleet">
+        <svg viewBox="0 0 20 20" fill="currentColor"><rect x="1" y="7" width="13" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M14 10h3l2 3v1.5h-5V10z" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="4.5" cy="14" r="1.8" fill="currentColor"/><circle cx="11.5" cy="14" r="1.8" fill="currentColor"/><circle cx="17" cy="14" r="1.8" fill="currentColor"/></svg>
+      </div>
+      <div class="kpi-body">
+        <div class="kpi-value">{{ stats.length }}</div>
+        <div class="kpi-label">Active Vehicles</div>
+      </div>
+    </div>
+
+    <div class="kpi-card kpi-card--alert" *ngIf="(critical$ | async)?.data as critical">
+      <div class="kpi-icon kpi-icon--critical">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+      </div>
+      <div class="kpi-body">
+        <div class="kpi-value" [class.kpi-value--alert]="critical.length > 0">{{ critical.length }}</div>
+        <div class="kpi-label">Critical Now</div>
+      </div>
+      <span class="kpi-pulse" *ngIf="critical.length > 0"></span>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon kpi-icon--error">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+      </div>
+      <div class="kpi-body">
+        <div class="kpi-value">{{ totalErrors(stats) | number }}</div>
+        <div class="kpi-label">Total Errors</div>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon kpi-icon--warn">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a8 8 0 100 16A8 8 0 0010 2zm0 4v4m0 4h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>
+      </div>
+      <div class="kpi-body">
+        <div class="kpi-value">{{ errorRate(stats) }}%</div>
+        <div class="kpi-label">Error Rate</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main panels -->
+  <div class="panels-grid">
+
+    <!-- Critical vehicles -->
+    <section class="panel" aria-label="Critical vehicles">
+      <div class="panel-header">
+        <h2 class="panel-title">
+          <span class="panel-title-dot dot--critical"></span>
+          Critical Vehicles
+        </h2>
+        <span class="panel-badge panel-badge--error" *ngIf="(critical$ | async)?.data?.length">
+          {{ (critical$ | async)?.data?.length }} active
+        </span>
+      </div>
+
+      <app-loading-error
+        [loading]="(critical$ | async)?.loading ?? false"
+        [error]="(critical$ | async)?.error ?? null"
+      ></app-loading-error>
+
+      <ng-container *ngIf="(critical$ | async)?.data as vehicles">
+        <div class="no-alerts" *ngIf="vehicles.length === 0">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+          All vehicles nominal
+        </div>
+        <ul class="critical-list" *ngIf="vehicles.length > 0">
+          <li *ngFor="let v of vehicles" class="critical-card">
+            <div class="critical-card-left">
+              <span class="alert-dot"></span>
+              <span class="critical-vid">{{ v.vehicleId }}</span>
+            </div>
+            <div class="critical-card-center">
+              <span class="critical-count">
+                <svg viewBox="0 0 12 12" fill="currentColor"><path fill-rule="evenodd" d="M6 1a5 5 0 100 10A5 5 0 006 1zm-.75 2.75a.75.75 0 011.5 0v3a.75.75 0 01-1.5 0v-3zm.75 6a.75.75 0 100-1.5.75.75 0 000 1.5z"/></svg>
+                {{ v.recentErrors }} errors in 15 min
+              </span>
+            </div>
+            <div class="critical-card-right">
+              <span class="critical-time">{{ v.lastSeen | date:'HH:mm:ss' }}</span>
+            </div>
+          </li>
+        </ul>
+      </ng-container>
+    </section>
+
+    <!-- Top error codes -->
+    <section class="panel" aria-label="Top error codes">
+      <div class="panel-header">
+        <h2 class="panel-title">
+          <span class="panel-title-dot dot--accent"></span>
+          Top Diagnostic Codes
+        </h2>
+        <span class="panel-hint">by frequency</span>
+      </div>
+
+      <app-loading-error
+        [loading]="(codeSummary$ | async)?.loading ?? false"
+        [error]="(codeSummary$ | async)?.error ?? null"
+      ></app-loading-error>
+
+      <ng-container *ngIf="(codeSummary$ | async)?.data as codes">
+        <div class="code-bars">
+          <div *ngFor="let c of codes.slice(0, 10)" class="code-bar-row">
+            <div class="code-bar-meta">
+              <span class="code-tag" [attr.data-level]="c.level">{{ c.code }}</span>
+              <span class="code-bar-count">{{ c.count | number }}</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill"
+                   [style.width.%]="(c.count / maxCount(codes)) * 100"
+                   [attr.data-level]="c.level">
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </ng-container>
-  </section>
+      </ng-container>
+    </section>
 
-  <!-- Vehicle summary -->
-  <section class="agg-panel" aria-label="Events by vehicle">
-    <h2 class="panel-title">Events by Vehicle</h2>
-    <app-loading-error
-      [loading]="(vehicleStats$ | async)?.loading ?? false"
-      [error]="(vehicleStats$ | async)?.error ?? null"
-    ></app-loading-error>
-    <ng-container *ngIf="(vehicleStats$ | async)?.data as stats">
-      <table class="vehicle-table" aria-label="Events per vehicle">
-        <thead>
-          <tr>
-            <th scope="col">Vehicle</th>
-            <th scope="col">Errors</th>
-            <th scope="col">Warns</th>
-            <th scope="col">Info</th>
-            <th scope="col">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let v of stats.slice(0, 15)">
-            <td>{{ v.vehicleId }}</td>
-            <td class="stat-error">{{ v.errorCount }}</td>
-            <td class="stat-warn">{{ v.warnCount }}</td>
-            <td class="stat-info">{{ v.infoCount }}</td>
-            <td>{{ v.total }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </ng-container>
-  </section>
+    <!-- Vehicle breakdown -->
+    <section class="panel panel--wide" aria-label="Events by vehicle">
+      <div class="panel-header">
+        <h2 class="panel-title">
+          <span class="panel-title-dot dot--accent"></span>
+          Fleet Breakdown
+        </h2>
+        <span class="panel-hint">errors · warns · info</span>
+      </div>
+
+      <app-loading-error
+        [loading]="(vehicleStats$ | async)?.loading ?? false"
+        [error]="(vehicleStats$ | async)?.error ?? null"
+      ></app-loading-error>
+
+      <ng-container *ngIf="(vehicleStats$ | async)?.data as stats">
+        <div class="vehicle-grid">
+          <div *ngFor="let v of stats.slice(0, 15)" class="vehicle-row">
+            <span class="vr-id">{{ v.vehicleId }}</span>
+            <div class="vr-bars">
+              <div class="vr-bar-seg" [style.flex]="v.errorCount" [title]="v.errorCount + ' errors'" data-level="ERROR"></div>
+              <div class="vr-bar-seg" [style.flex]="v.warnCount"  [title]="v.warnCount  + ' warns'"  data-level="WARN"></div>
+              <div class="vr-bar-seg" [style.flex]="v.infoCount"  [title]="v.infoCount  + ' info'"   data-level="INFO"></div>
+            </div>
+            <div class="vr-counts">
+              <span class="vr-e">{{ v.errorCount }}</span>
+              <span class="vr-w">{{ v.warnCount }}</span>
+              <span class="vr-i">{{ v.infoCount }}</span>
+              <span class="vr-t">{{ v.total }}</span>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </section>
+
+  </div>
 </div>

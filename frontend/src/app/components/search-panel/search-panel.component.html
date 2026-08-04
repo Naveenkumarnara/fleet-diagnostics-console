@@ -1,49 +1,64 @@
 <form [formGroup]="form" class="search-panel" aria-label="Filter events">
   <div class="filter-row">
+
     <div class="filter-group">
-      <label for="vehicleIds">Vehicle IDs</label>
-      <input
-        id="vehicleIds"
-        type="text"
-        formControlName="vehicleIds"
-        placeholder="V001, V002, ..."
-        aria-describedby="vehicleIds-hint"
-      />
+      <label for="vehicleIds">
+        <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><rect x="0.5" y="5" width="11" height="6" rx="1" stroke="currentColor" stroke-width="1" fill="none"/><path d="M11.5 7.5h2.5l1.5 2.5v1.5h-4V7.5z" stroke="currentColor" stroke-width="1" fill="none"/><circle cx="3.5" cy="11" r="1.5" fill="currentColor"/><circle cx="9.5" cy="11" r="1.5" fill="currentColor"/></svg>
+        Vehicle
+      </label>
+      <input id="vehicleIds" type="text" formControlName="vehicleIds"
+             placeholder="V001, V002 ..." aria-describedby="vehicleIds-hint" autocomplete="off"/>
       <span id="vehicleIds-hint" class="hint">comma-separated</span>
     </div>
 
     <div class="filter-group">
-      <label for="code">Error Code</label>
-      <input
-        id="code"
-        type="text"
-        formControlName="code"
-        placeholder="P0300, U0420..."
-      />
+      <label for="code">
+        <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M5 4l-3 4 3 4M11 4l3 4-3 4M9 2l-2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>
+        Code
+      </label>
+      <input id="code" type="text" formControlName="code"
+             placeholder="P0300, U0420 ..." autocomplete="off"/>
+    </div>
+
+    <div class="filter-group severity-group">
+      <span class="severity-label">Severity</span>
+      <div class="severity-pills" role="group" aria-label="Filter by severity">
+        <button type="button" class="pill pill-all"
+                [class.active]="form.get('level')!.value === ''"
+                (click)="form.get('level')!.setValue('')">All</button>
+        <button type="button" class="pill pill-error"
+                [class.active]="form.get('level')!.value === 'ERROR'"
+                (click)="form.get('level')!.setValue('ERROR')">ERROR</button>
+        <button type="button" class="pill pill-warn"
+                [class.active]="form.get('level')!.value === 'WARN'"
+                (click)="form.get('level')!.setValue('WARN')">WARN</button>
+        <button type="button" class="pill pill-info"
+                [class.active]="form.get('level')!.value === 'INFO'"
+                (click)="form.get('level')!.setValue('INFO')">INFO</button>
+      </div>
     </div>
 
     <div class="filter-group">
-      <label for="level">Severity</label>
-      <select id="level" formControlName="level" aria-label="Filter by severity">
-        <option value="">All</option>
-        <option value="ERROR">ERROR</option>
-        <option value="WARN">WARN</option>
-        <option value="INFO">INFO</option>
-      </select>
+      <label for="from">
+        <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><rect x="1" y="2" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M1 6h14" stroke="currentColor" stroke-width="1.5"/><path d="M5 1v2M11 1v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        From
+      </label>
+      <input id="from" type="datetime-local" formControlName="from"/>
     </div>
 
     <div class="filter-group">
-      <label for="from">From</label>
-      <input id="from" type="datetime-local" formControlName="from" />
+      <label for="to">
+        <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><rect x="1" y="2" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M1 6h14" stroke="currentColor" stroke-width="1.5"/><path d="M5 1v2M11 1v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        To
+      </label>
+      <input id="to" type="datetime-local" formControlName="to"/>
     </div>
 
-    <div class="filter-group">
-      <label for="to">To</label>
-      <input id="to" type="datetime-local" formControlName="to" />
-    </div>
-
-    <button type="button" class="reset-btn" (click)="reset()" aria-label="Clear all filters">
+    <button type="button" class="reset-btn" (click)="reset()" aria-label="Clear all filters"
+            title="Clear all filters">
+      <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 10h8l1-10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       Clear
     </button>
+
   </div>
 </form>

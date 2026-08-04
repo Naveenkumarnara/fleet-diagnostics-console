@@ -1,27 +1,34 @@
 <div class="table-wrapper">
-  <app-loading-error
-    [loading]="(state$ | async)?.loading ?? false"
-    [error]="(state$ | async)?.error ?? null"
-  ></app-loading-error>
-
   <ng-container *ngIf="(state$ | async) as state">
-    <ng-container *ngIf="state.data as result">
-      <div class="table-meta">
-        <span class="count">{{ result.total | number }} events</span>
-        <div class="pagination" *ngIf="result.total > fleet.pageSize">
-          <button (click)="prevPage()" [disabled]="currentPage === 0" aria-label="Previous page">‹</button>
-          <span>Page {{ currentPage + 1 }} of {{ (totalPages$ | async) }}</span>
-          <button (click)="nextPage(result.total)" [disabled]="currentPage >= (totalPages$ | async)! - 1" aria-label="Next page">›</button>
-        </div>
+    <div class="table-toolbar">
+      <div class="toolbar-left">
+        <span class="result-count" *ngIf="state.data">
+          <strong>{{ state.data.total | number }}</strong>
+          <span>event{{ state.data.total !== 1 ? 's' : '' }}</span>
+        </span>
       </div>
+      <div class="pagination" *ngIf="state.data && state.data.total > fleet.pageSize">
+        <button (click)="prevPage()" [disabled]="currentPage === 0" aria-label="Previous page">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M10 4l-4 4 4 4"/></svg>
+        </button>
+        <span class="page-info">{{ currentPage + 1 }} / {{ totalPages$ | async }}</span>
+        <button (click)="nextPage(state.data.total)"
+                [disabled]="currentPage >= (totalPages$ | async)! - 1" aria-label="Next page">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M6 4l4 4-4 4"/></svg>
+        </button>
+      </div>
+    </div>
 
+    <app-loading-error [loading]="state.loading" [error]="state.error"></app-loading-error>
+
+    <ng-container *ngIf="state.data as result">
       <table aria-label="Diagnostic events">
         <thead>
           <tr>
             <th scope="col" class="sortable" (click)="sort('timestamp')"
                 [class.sorted]="currentSort === 'timestamp'"
                 [attr.aria-sort]="currentSort === 'timestamp' ? currentSortDir + 'ending' : 'none'">
-              Timestamp <span class="sort-icon">{{ sortIcon('timestamp') }}</span>
+              Time <span class="sort-icon">{{ sortIcon('timestamp') }}</span>
             </th>
             <th scope="col" class="sortable" (click)="sort('vehicleId')"
                 [class.sorted]="currentSort === 'vehicleId'"
@@ -43,20 +50,36 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let event of result.data" [class]="levelClass(event.level)">
-            <td class="mono">{{ event.timestamp | date:'yyyy-MM-dd HH:mm:ss' }}</td>
-            <td class="vehicle-id">{{ event.vehicleId }}</td>
-            <td><span class="level-badge" [attr.data-level]="event.level">{{ event.level }}</span></td>
-            <td class="mono code">{{ event.code }}</td>
-            <td class="subsystem">{{ event.subsystem ?? '—' }}</td>
-            <td class="message">{{ event.message }}</td>
+          <tr *ngFor="let event of result.data; trackBy: trackById" [class]="levelClass(event.level)">
+            <td class="td-time">
+              <span class="time-rel" [title]="event.timestamp | date:'yyyy-MM-dd HH:mm:ss'">
+                {{ event.timestamp | relativeTime }}
+              </span>
+              <span class="time-abs">{{ event.timestamp | date:'HH:mm:ss' }}</span>
+            </td>
+            <td class="td-vehicle">
+              <span class="vehicle-chip">{{ event.vehicleId }}</span>
+            </td>
+            <td class="td-level">
+              <span class="level-badge" [attr.data-level]="event.level">{{ event.level }}</span>
+            </td>
+            <td class="td-code">
+              <span class="code-chip">{{ event.code }}</span>
+            </td>
+            <td class="td-subsystem">{{ event.subsystem ?? '—' }}</td>
+            <td class="td-message">{{ event.message }}</td>
           </tr>
         </tbody>
       </table>
 
-      <p *ngIf="result.data.length === 0 && !state.loading" class="empty">
-        No events match the current filters.
-      </p>
+      <div *ngIf="result.data.length === 0 && !state.loading" class="empty-state">
+        <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+          <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="2" opacity="0.3"/>
+          <path d="M16 24h16M24 16v16" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.3"/>
+        </svg>
+        <p>No events match the current filters</p>
+        <span>Try adjusting the vehicle ID, code, or time range</span>
+      </div>
     </ng-container>
   </ng-container>
 </div>

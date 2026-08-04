@@ -22,12 +22,18 @@ export class AggregationsComponent implements OnInit {
     this.critical$     = this.fleet.critical$;
   }
 
-  levelColor(level: string): string {
-    const map: Record<string, string> = { ERROR: '#ff4444', WARN: '#ffaa00', INFO: '#4488ff' };
-    return map[level] ?? '#8891aa';
-  }
-
   maxCount(stats: CodeStats[]): number {
     return stats[0]?.count ?? 1;
+  }
+
+  totalErrors(stats: VehicleStats[]): number {
+    return stats.reduce((sum, v) => sum + v.errorCount, 0);
+  }
+
+  errorRate(stats: VehicleStats[]): string {
+    const total  = stats.reduce((sum, v) => sum + v.total, 0);
+    const errors = stats.reduce((sum, v) => sum + v.errorCount, 0);
+    if (!total) return '0';
+    return ((errors / total) * 100).toFixed(1);
   }
 }

@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { FleetStateService, LoadState } from '../../services/fleet-state.service';
-import { EventsResponse, SortField } from '../../models/event.model';
+import { DiagnosticEvent, EventsResponse, SortField } from '../../models/event.model';
 
 @Component({
   selector: 'app-events-table',
@@ -50,5 +50,9 @@ export class EventsTableComponent implements OnInit {
 
   levelClass(level: string): string {
     return level.toLowerCase();
+  }
+
+  trackById(_: number, event: DiagnosticEvent): number {
+    return event.id;
   }
 }

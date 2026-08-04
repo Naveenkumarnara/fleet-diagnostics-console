@@ -11,6 +11,7 @@ import { EventsTableComponent } from './components/events-table/events-table.com
 import { AggregationsComponent } from './components/aggregations/aggregations.component';
 import { LiveBannerComponent } from './components/live-banner/live-banner.component';
 import { LoadingErrorComponent } from './components/loading-error/loading-error.component';
+import { RelativeTimePipe } from './pipes/relative-time.pipe';
 
 @NgModule({
   declarations: [
@@ -20,6 +21,7 @@ import { LoadingErrorComponent } from './components/loading-error/loading-error.
     AggregationsComponent,
     LiveBannerComponent,
     LoadingErrorComponent,
+    RelativeTimePipe,
   ],
   imports: [
     BrowserModule,

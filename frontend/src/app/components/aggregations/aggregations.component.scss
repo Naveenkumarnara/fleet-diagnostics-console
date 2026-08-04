@@ -1,121 +1,337 @@
-.agg-wrapper {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 16px;
-  padding: 20px;
+.dashboard {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow: auto;
+  flex: 1;
 }
 
-.agg-panel {
-  background: #1a1e2e;
-  border: 1px solid #2d3250;
-  border-radius: 8px;
-  padding: 16px;
+// ── KPI Strip ────────────────────────────────────────────────────────────────
+.kpi-strip {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.kpi-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  min-width: 160px;
+  flex: 1;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--border-strong);
+  }
+
+  &.kpi-card--alert::before { background: var(--error-vivid); }
+}
+
+.kpi-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+
+  svg { width: 18px; height: 18px; }
+
+  &.kpi-icon--fleet    { background: var(--accent-bg);   color: var(--accent-light); }
+  &.kpi-icon--critical { background: var(--error-bg);    color: var(--error); }
+  &.kpi-icon--error    { background: var(--error-bg);    color: var(--error); }
+  &.kpi-icon--warn     { background: var(--warn-bg);     color: var(--warn); }
+}
+
+.kpi-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kpi-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+
+  &.kpi-value--alert { color: var(--error); }
+}
+
+.kpi-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 500;
+}
+
+.kpi-pulse {
+  position: absolute;
+  top: 10px; right: 10px;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--error);
+  animation: pulse-ring 1.8s ease-out infinite;
+}
+
+// ── Panels Grid ──────────────────────────────────────────────────────────────
+.panels-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+
+  &.panel--wide { grid-column: 1 / -1; }
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--border);
 }
 
 .panel-title {
-  font-size: 13px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #8891aa;
-  margin: 0 0 12px;
-}
-
-.no-data {
-  color: #606880;
-  font-size: 13px;
-  text-align: center;
-  padding: 20px 0;
-}
-
-// Critical vehicles
-.critical-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.critical-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 13px;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-secondary);
+  margin: 0;
 }
 
-.vehicle-badge {
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-weight: 600;
-  font-size: 12px;
+.panel-title-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
 
-  &.critical {
-    background: rgba(255,68,68,0.15);
-    color: #ff7070;
-    border: 1px solid rgba(255,68,68,0.3);
+  &.dot--critical { background: var(--error-vivid); }
+  &.dot--accent   { background: var(--accent); }
+}
+
+.panel-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+
+  &.panel-badge--error {
+    background: var(--error-bg);
+    color: var(--error);
+    border: 1px solid var(--error-border);
   }
 }
 
-.error-count { color: #ff7070; font-size: 12px; }
-.last-seen   { color: #606880; font-size: 11px; margin-left: auto; }
-
-// Code bars
-.code-bar-list { display: flex; flex-direction: column; gap: 8px; }
-
-.code-bar-item {}
-
-.code-bar-label {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  margin-bottom: 3px;
+.panel-hint {
+  font-size: 11px;
+  color: var(--text-muted);
 }
 
-.code-name { color: #b0b8e0; font-family: monospace; }
-.code-count { color: #8891aa; }
+// ── Critical Vehicles ─────────────────────────────────────────────────────────
+.no-alerts {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px 16px;
+  color: var(--success);
+  font-size: 13px;
+
+  svg { width: 18px; height: 18px; }
+}
+
+.critical-list {
+  list-style: none;
+  padding: 8px 0;
+}
+
+.critical-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+
+  &:last-child { border-bottom: none; }
+  &:hover { background: var(--bg-elevated); }
+}
+
+.critical-card-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 80px;
+}
+
+.alert-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--error-vivid);
+  animation: pulse-ring 1.8s ease-out infinite;
+  flex-shrink: 0;
+}
+
+.critical-vid {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--error);
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+  border-radius: var(--radius-sm);
+  padding: 2px 7px;
+}
+
+.critical-card-center {
+  flex: 1;
+}
+
+.critical-count {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-secondary);
+
+  svg { width: 12px; height: 12px; color: var(--error); }
+}
+
+.critical-card-right {}
+
+.critical-time {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+// ── Code Bars ─────────────────────────────────────────────────────────────────
+.code-bars {
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.code-bar-row {}
+
+.code-bar-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.code-tag {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+
+  &[data-level="ERROR"] { color: var(--error); background: var(--error-bg); }
+  &[data-level="WARN"]  { color: var(--warn);  background: var(--warn-bg); }
+  &[data-level="INFO"]  { color: var(--info);  background: var(--info-bg); }
+}
+
+.code-bar-count {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
 
 .bar-track {
-  height: 6px;
-  background: #252a3d;
-  border-radius: 3px;
+  height: 5px;
+  background: var(--bg-elevated);
+  border-radius: 10px;
   overflow: hidden;
 }
 
 .bar-fill {
   height: 100%;
-  border-radius: 3px;
-  transition: width 0.3s ease;
-  opacity: 0.8;
+  border-radius: 10px;
+  transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
+
+  &[data-level="ERROR"] { background: var(--error-vivid); opacity: 0.8; }
+  &[data-level="WARN"]  { background: var(--warn-vivid);  opacity: 0.8; }
+  &[data-level="INFO"]  { background: var(--accent);      opacity: 0.7; }
 }
 
-// Vehicle table
-.vehicle-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
+// ── Fleet Breakdown ───────────────────────────────────────────────────────────
+.vehicle-grid {
+  padding: 4px 0;
+}
 
-  th {
-    text-align: right;
-    padding: 4px 8px;
-    color: #606880;
-    font-weight: 500;
-    border-bottom: 1px solid #2d3250;
+.vehicle-row {
+  display: grid;
+  grid-template-columns: 56px 1fr 120px;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 16px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
 
-    &:first-child { text-align: left; }
+  &:last-child { border-bottom: none; }
+  &:hover { background: var(--bg-elevated); }
+}
+
+.vr-id {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.vr-bars {
+  display: flex;
+  height: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+  gap: 1px;
+
+  .vr-bar-seg {
+    min-width: 3px;
+    transition: flex 0.3s ease;
+
+    &[data-level="ERROR"] { background: var(--error-vivid); opacity: 0.75; }
+    &[data-level="WARN"]  { background: var(--warn-vivid);  opacity: 0.75; }
+    &[data-level="INFO"]  { background: var(--accent);      opacity: 0.5; }
   }
+}
 
-  td {
-    text-align: right;
-    padding: 5px 8px;
-    color: #c8ceea;
-    border-bottom: 1px solid #1e2235;
+.vr-counts {
+  display: flex;
+  gap: 10px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  justify-content: flex-end;
 
-    &:first-child { text-align: left; color: #d0d6f0; font-weight: 500; }
-  }
-
-  .stat-error { color: #ff7070; }
-  .stat-warn  { color: #ffbb44; }
-  .stat-info  { color: #6699ff; }
+  .vr-e { color: var(--error);         min-width: 28px; text-align: right; }
+  .vr-w { color: var(--warn);          min-width: 28px; text-align: right; }
+  .vr-i { color: var(--info);          min-width: 28px; text-align: right; }
+  .vr-t { color: var(--text-muted);    min-width: 28px; text-align: right; font-weight: 500; }
 }
