@@ -18,10 +18,26 @@
       <table aria-label="Diagnostic events">
         <thead>
           <tr>
-            <th scope="col">Timestamp</th>
-            <th scope="col">Vehicle</th>
-            <th scope="col">Severity</th>
-            <th scope="col">Code</th>
+            <th scope="col" class="sortable" (click)="sort('timestamp')"
+                [class.sorted]="currentSort === 'timestamp'"
+                [attr.aria-sort]="currentSort === 'timestamp' ? currentSortDir + 'ending' : 'none'">
+              Timestamp <span class="sort-icon">{{ sortIcon('timestamp') }}</span>
+            </th>
+            <th scope="col" class="sortable" (click)="sort('vehicleId')"
+                [class.sorted]="currentSort === 'vehicleId'"
+                [attr.aria-sort]="currentSort === 'vehicleId' ? currentSortDir + 'ending' : 'none'">
+              Vehicle <span class="sort-icon">{{ sortIcon('vehicleId') }}</span>
+            </th>
+            <th scope="col" class="sortable" (click)="sort('level')"
+                [class.sorted]="currentSort === 'level'"
+                [attr.aria-sort]="currentSort === 'level' ? currentSortDir + 'ending' : 'none'">
+              Severity <span class="sort-icon">{{ sortIcon('level') }}</span>
+            </th>
+            <th scope="col" class="sortable" (click)="sort('code')"
+                [class.sorted]="currentSort === 'code'"
+                [attr.aria-sort]="currentSort === 'code' ? currentSortDir + 'ending' : 'none'">
+              Code <span class="sort-icon">{{ sortIcon('code') }}</span>
+            </th>
             <th scope="col">Subsystem</th>
             <th scope="col">Message</th>
           </tr>

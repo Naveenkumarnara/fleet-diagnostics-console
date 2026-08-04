@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { FleetStateService, LoadState } from '../../services/fleet-state.service';
-import { EventsResponse } from '../../models/event.model';
+import { EventsResponse, SortField } from '../../models/event.model';
 
 @Component({
   selector: 'app-events-table',
@@ -23,7 +23,21 @@ export class EventsTableComponent implements OnInit {
     );
   }
 
-  get currentPage() { return this.fleet.currentPage; }
+  get currentPage()    { return this.fleet.currentPage; }
+  get currentSort()    { return this.fleet.currentSortField; }
+  get currentSortDir() { return this.fleet.currentSortDir; }
+
+  sort(field: SortField) {
+    const dir = this.fleet.currentSortField === field && this.fleet.currentSortDir === 'desc'
+      ? 'asc'
+      : 'desc';
+    this.fleet.setSort(field, dir);
+  }
+
+  sortIcon(field: SortField): string {
+    if (this.fleet.currentSortField !== field) return '↕';
+    return this.fleet.currentSortDir === 'asc' ? '↑' : '↓';
+  }
 
   prevPage() {
     if (this.fleet.currentPage > 0) this.fleet.setPage(this.fleet.currentPage - 1);
