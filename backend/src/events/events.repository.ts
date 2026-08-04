@@ -14,6 +14,14 @@ export interface DiagnosticEvent {
   mileage: number | null;
 }
 
+// Maps DTO field names to actual column names — whitelist prevents injection
+const SORT_COLUMN: Record<string, string> = {
+  timestamp: 'timestamp',
+  vehicleId: 'vehicle_id',
+  level:     'level',
+  code:      'code',
+};
+
 export interface EventFilters {
   vehicleIds?: string[];
   code?: string;
@@ -22,6 +30,8 @@ export interface EventFilters {
   to?: string;
   limit?: number;
   offset?: number;
+  sortField?: string;
+  sortDir?: 'asc' | 'desc';
 }
 
 export interface VehicleStats {
@@ -83,11 +93,14 @@ export class EventsRepository {
       .prepare(`SELECT COUNT(*) as cnt FROM diagnostic_events${where}`)
       .get(...params) as { cnt: number };
 
+    const col = SORT_COLUMN[filters.sortField ?? 'timestamp'] ?? 'timestamp';
+    const dir = filters.sortDir === 'asc' ? 'ASC' : 'DESC';
+
     const rows = this.db.connection
       .prepare(
         `SELECT id, timestamp, vehicle_id as vehicleId, level, code, message, subsystem, mileage
          FROM diagnostic_events${where}
-         ORDER BY timestamp DESC
+         ORDER BY ${col} ${dir}
          LIMIT ? OFFSET ?`,
       )
       .all(...params, limit, offset) as DiagnosticEvent[];

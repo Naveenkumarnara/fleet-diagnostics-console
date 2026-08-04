@@ -26,8 +26,8 @@ export class EventsController {
   @Get()
   @ApiOperation({ summary: 'List diagnostic events with optional filters' })
   getEvents(@Query(new ValidationPipe({ transform: true })) query: QueryEventsDto) {
-    const { vehicleIds, code, level, from, to, limit, offset } = query;
-    return this.eventsService.getEvents({ vehicleIds, code, level, from, to, limit, offset });
+    const { vehicleIds, code, level, from, to, limit, offset, sortField, sortDir } = query;
+    return this.eventsService.getEvents({ vehicleIds, code, level, from, to, limit, offset, sortField, sortDir });
   }
 
   @Get('stats/by-vehicle')

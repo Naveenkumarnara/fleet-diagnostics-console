@@ -2,6 +2,9 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsString, IsIn, IsInt, Min, IsDateString, IsArray } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 
+const SORTABLE_FIELDS = ['timestamp', 'vehicleId', 'level', 'code'] as const;
+export type SortField = typeof SORTABLE_FIELDS[number];
+
 export class QueryEventsDto {
   @ApiPropertyOptional({ description: 'Comma-separated vehicle IDs' })
   @IsOptional()
@@ -43,4 +46,14 @@ export class QueryEventsDto {
   @IsInt()
   @Min(0)
   offset?: number;
+
+  @ApiPropertyOptional({ enum: SORTABLE_FIELDS, default: 'timestamp' })
+  @IsOptional()
+  @IsIn(SORTABLE_FIELDS)
+  sortField?: SortField;
+
+  @ApiPropertyOptional({ enum: ['asc', 'desc'], default: 'desc' })
+  @IsOptional()
+  @IsIn(['asc', 'desc'])
+  sortDir?: 'asc' | 'desc';
 }
