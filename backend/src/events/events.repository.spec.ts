@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import Database from 'better-sqlite3';
 import { DatabaseService } from '../database/database.service';
 import { EventsRepository } from './events.repository';
@@ -35,10 +36,13 @@ describe('EventsRepository', () => {
     dbService = new TestDatabaseService();
     dbService.onModuleInit();
 
+    const mockConfig = { get: (key: string) => ({ criticalWindowMinutes: 15, criticalErrorThreshold: 3 }[key]) };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EventsRepository,
         { provide: DatabaseService, useValue: dbService },
+        { provide: ConfigService, useValue: mockConfig },
       ],
     }).compile();
 
@@ -120,9 +124,6 @@ describe('EventsRepository', () => {
   });
 
   it('criticalVehicles returns vehicles exceeding error threshold', () => {
-    process.env.CRITICAL_ERROR_THRESHOLD = '3';
-    process.env.CRITICAL_WINDOW_MINUTES = '15';
-
     for (let i = 0; i < 5; i++) {
       repo.insert({ ...makeEvent(), timestamp: new Date(Date.now() - i * 10_000) });
     }
