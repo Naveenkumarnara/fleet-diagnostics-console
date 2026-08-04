@@ -6,11 +6,14 @@
 
 ```
 backend/src/
+  config/        app.config.ts — typed config factory, Joi validation schema
+  common/        AllExceptionsFilter, LoggingInterceptor
   database/      DatabaseService — better-sqlite3 wrapper, migration on startup
   parser/        ParserService — log line → ParsedEvent, subsystem tagging
   events/        EventsRepository, EventsService, EventsController + DTOs
   ingestion/     IngestionService — seed logic + interval-based live generator
   sse/           SseService — Subject<DiagnosticEvent> multicast to HTTP clients
+  health/        HealthController — GET /api/health
 ```
 
 Each module has a single responsibility. The controller only knows about the service; the service knows about the repo and parser; the repo owns all SQL.
@@ -41,6 +44,12 @@ Indexes on `vehicle_id`, `level`, `code`, `timestamp` — the four dimensions of
 
 **"Critical" logic** — A single aggregation query with a `HAVING` clause against the event timestamp. No separate state table. The definition is point-in-time: check the last 15-minute window on each request. This avoids needing a background job to flip state flags, and it naturally self-corrects when errors age out.
 
+**Config validation** — `@nestjs/config` with a Joi schema in `AppModule`. If a required env var is missing or the wrong type, the app throws at startup rather than silently using a default and failing later at runtime.
+
+**Global exception filter** — `AllExceptionsFilter` catches everything and returns `{ statusCode, message, path, timestamp }`. No raw 500 stack traces leaking to the client.
+
+**Request logging** — `LoggingInterceptor` logs every HTTP request: method, path, status code, duration. Wired as a global interceptor in `main.ts`.
+
 **Validation** — `class-validator` DTOs on query params. The `@Transform` decorator on `vehicleIds` handles the comma-to-array split. Date range is validated as ISO 8601 before it ever reaches the repository.
 
 ### Live event generation
@@ -65,24 +74,26 @@ The service pattern keeps all reactive logic in one place and avoids spreading s
 User changes filter input
         │
         ▼
-  BehaviorSubject (vehicleIds$, code$, level$, ...)
+  BehaviorSubject (vehicleIds$, code$, level$, from$, to$, page$, refreshTrigger$)
         │
         ▼ combineLatest + debounceTime
   activeFilters$ (shareReplay(1))
         │
-        ├──▶ events$       switchMap → GET /events
-        └──▶ vehicleStats$ switchMap → GET /events/stats/by-vehicle
+        ├──▶ events$       switchMap → GET /api/events
+        ├──▶ vehicleStats$ switchMap → GET /api/events/stats/by-vehicle
+        └──▶ codeSummary$  switchMap → GET /api/events/stats/by-code  ← respects time range
 
-  Separately (not filter-dependent):
-  codeSummary$ ─────────────────── GET /events/stats/by-code
-  critical$    ─────────────────── GET /events/critical
-  liveStream$  ─────────────────── EventSource /events/stream
+  refreshTrigger$ (incremented by applyLiveUpdates)
+        └──▶ critical$     switchMap → GET /api/events/critical
+
+  liveStream$  ──────────────────── EventSource /api/events/stream
                         │
                         ▼
                pendingCount$ (BehaviorSubject)
                         │
                         ▼
-               LiveBannerComponent shows "N new events — Load now"
+               LiveBannerComponent — "N new events — Load now"
+               (clicking increments refreshTrigger$, reloads all views)
 ```
 
 ### RxJS operator choices
@@ -93,6 +104,8 @@ User changes filter input
 - **`distinctUntilChanged`** — prevents duplicate emissions when a field is set to the same value. Cheap and prevents spurious re-fetches.
 - **`shareReplay(1)`** — `activeFilters$` and derived streams are subscribed by multiple components (events table and aggregations both react to filter changes). Without shareReplay, each subscriber would trigger its own combineLatest computation and its own HTTP request. shareReplay(1) makes them share a single upstream and replay the last value to new subscribers.
 - **`startWith`** — ensures the loading state is emitted immediately before the async result arrives, so the UI can show a spinner without waiting for the HTTP response.
+- **`catchError`** — every HTTP observable catches errors and maps them to `{ data: null, loading: false, error: message }`. Without this, a failed request would leave the stream silent and the UI stuck in a loading state forever.
+- **`refreshTrigger$`** — a `BehaviorSubject<number>` that gets incremented when the user clicks "Load now". It's included in `combineLatest` so all filter-dependent streams re-fetch, and `critical$` subscribes to it directly. Using an incrementing number (not a boolean toggle) avoids `distinctUntilChanged` suppressing repeated reloads on the same page.
 
 ### Component breakdown
 
