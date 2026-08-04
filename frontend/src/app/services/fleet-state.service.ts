@@ -100,9 +100,10 @@ export class FleetStateService {
 
     // codeSummary and critical respond to refreshTrigger so they reload when
     // the user clicks "Load now" on the live banner
-    this.codeSummary$ = this.refreshTrigger$.pipe(
-      switchMap(() =>
-        this.api.getStatsByCode().pipe(
+    // codeSummary uses activeFilters$ so it respects the active time range
+    this.codeSummary$ = this.activeFilters$.pipe(
+      switchMap((filters) =>
+        this.api.getStatsByCode(filters.from, filters.to).pipe(
           map((data) => ({ data, loading: false, error: null })),
           catchError((err: Error) => of({ data: null, loading: false, error: err.message ?? 'Failed to load code stats' })),
           startWith({ data: null, loading: true, error: null }),

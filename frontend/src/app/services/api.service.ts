@@ -36,8 +36,11 @@ export class ApiService {
     return this.http.get<VehicleStats[]>(`${this.base}/events/stats/by-vehicle`, { params });
   }
 
-  getStatsByCode(): Observable<CodeStats[]> {
-    return this.http.get<CodeStats[]>(`${this.base}/events/stats/by-code`);
+  getStatsByCode(from?: string, to?: string): Observable<CodeStats[]> {
+    let params = new HttpParams();
+    if (from) params = params.set('from', from);
+    if (to)   params = params.set('to', to);
+    return this.http.get<CodeStats[]>(`${this.base}/events/stats/by-code`, { params });
   }
 
   getCritical(): Observable<CriticalVehicle[]> {

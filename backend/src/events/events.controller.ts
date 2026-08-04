@@ -39,7 +39,7 @@ export class EventsController {
   @Get('stats/by-code')
   @ApiOperation({ summary: 'Most frequent error codes' })
   statsByCode(@Query(new ValidationPipe({ transform: true })) query: StatsQueryDto) {
-    return this.eventsService.getStatsByCode(query.limit);
+    return this.eventsService.getStatsByCode(query.limit, query.from, query.to);
   }
 
   @Get('critical')

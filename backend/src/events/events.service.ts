@@ -17,8 +17,8 @@ export class EventsService {
     return this.repo.statsByVehicle(from, to);
   }
 
-  getStatsByCode(limit?: number) {
-    return this.repo.statsByCode(limit);
+  getStatsByCode(limit?: number, from?: string, to?: string) {
+    return this.repo.statsByCode(limit, from, to);
   }
 
   getCriticalVehicles() {

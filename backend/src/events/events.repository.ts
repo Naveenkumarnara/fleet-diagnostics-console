@@ -115,14 +115,20 @@ export class EventsRepository {
     `).all(...params) as VehicleStats[]);
   }
 
-  statsByCode(limit = 20): CodeStats[] {
+  statsByCode(limit = 20, from?: string, to?: string): CodeStats[] {
+    const conds: string[] = [];
+    const params: (string | number)[] = [];
+    if (from) { conds.push('timestamp >= ?'); params.push(from); }
+    if (to)   { conds.push('timestamp <= ?'); params.push(to); }
+    const where = conds.length ? ' WHERE ' + conds.join(' AND ') : '';
+
     return this.db.connection.prepare(`
       SELECT code, COUNT(*) as count, level
-      FROM diagnostic_events
+      FROM diagnostic_events${where}
       GROUP BY code, level
       ORDER BY count DESC
       LIMIT ?
-    `).all(limit) as CodeStats[];
+    `).all(...params, limit) as CodeStats[];
   }
 
   // "Critical" = vehicle with >= 3 ERROR events in the last 15 minutes.
