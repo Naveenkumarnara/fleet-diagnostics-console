@@ -44,11 +44,13 @@ export class SearchPanelComponent implements OnInit {
     });
 
     this.form.get('from')!.valueChanges.subscribe((v: string) => {
-      this.state.setFrom(v ?? '');
+      // datetime-local gives local time with no timezone — convert to UTC ISO
+      this.state.setFrom(v ? new Date(v).toISOString() : '');
     });
 
     this.form.get('to')!.valueChanges.subscribe((v: string) => {
-      this.state.setTo(v ?? '');
+      // Extend to end of the selected minute so events at e.g. 14:00:45 aren't excluded
+      this.state.setTo(v ? new Date(v + ':59.999').toISOString() : '');
     });
   }
 
