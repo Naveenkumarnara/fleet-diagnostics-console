@@ -99,6 +99,7 @@ Available at http://localhost:3000/api/docs when the backend is running. No stat
 - Angular dashboard: reactive filter panel, paginated events table, aggregations (critical vehicles, top codes, per-vehicle breakdown) — all views respect the active time range
 - Live update banner: counts incoming SSE events **that match the active filter**, reloads all views on demand without disrupting current filters
 - Error state propagated to the UI — API failures show a message instead of a frozen spinner
+- Light/dark theme toggle — persists to localStorage, follows OS preference on first visit
 - 35 tests: 14 backend (parser, filters, critical logic), 21 frontend (state service reactive chains, filter-aware live counting, search panel wiring)
 
 ## What I'd do next
