@@ -11,6 +11,8 @@ import { EventsTableComponent } from './components/events-table/events-table.com
 import { AggregationsComponent } from './components/aggregations/aggregations.component';
 import { LiveBannerComponent } from './components/live-banner/live-banner.component';
 import { LoadingErrorComponent } from './components/loading-error/loading-error.component';
+import { LevelBadgeComponent } from './components/level-badge/level-badge.component';
+import { RecentEventsComponent } from './components/recent-events/recent-events.component';
 import { RelativeTimePipe } from './pipes/relative-time.pipe';
 
 @NgModule({
@@ -21,6 +23,8 @@ import { RelativeTimePipe } from './pipes/relative-time.pipe';
     AggregationsComponent,
     LiveBannerComponent,
     LoadingErrorComponent,
+    LevelBadgeComponent,
+    RecentEventsComponent,
     RelativeTimePipe,
   ],
   imports: [

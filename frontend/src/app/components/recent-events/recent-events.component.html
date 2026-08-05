@@ -1,0 +1,38 @@
+<section class="panel" aria-label="Recent events">
+  <div class="panel-header">
+    <h2 class="panel-title">
+      <span class="panel-title-dot dot--live"></span>
+      Recent Events
+    </h2>
+    <button class="view-all" (click)="viewAll()" aria-label="View all events">
+      View All
+      <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M4 2l4 4-4 4" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+
+  <div class="new-bar" *ngIf="(pending$ | async) as pending" [class.visible]="pending > 0">
+    <span *ngIf="pending > 0">
+      <span class="new-dot"></span>{{ pending }} new event{{ pending !== 1 ? 's' : '' }} received
+    </span>
+    <button *ngIf="pending > 0" class="refresh-btn" (click)="refresh()">Refresh</button>
+  </div>
+
+  <app-loading-error
+    [loading]="(state$ | async)?.loading ?? false"
+    [error]="(state$ | async)?.error ?? null"
+  ></app-loading-error>
+
+  <ng-container *ngIf="(state$ | async)?.data as events">
+    <ul class="recent-list" *ngIf="events.length > 0">
+      <li *ngFor="let e of events; trackBy: trackById"
+          class="recent-row" [class.is-new]="isNew(e.id)" [class]="e.level.toLowerCase()">
+        <span class="rr-time" [title]="e.timestamp | date:'yyyy-MM-dd HH:mm:ss'">{{ e.timestamp | relativeTime }}</span>
+        <span class="rr-vehicle">{{ e.vehicleId }}</span>
+        <app-level-badge [level]="e.level"></app-level-badge>
+        <span class="rr-code">{{ e.code }}</span>
+        <span class="rr-message">{{ e.message }}</span>
+      </li>
+    </ul>
+    <p *ngIf="events.length === 0" class="no-recent">No events yet.</p>
+  </ng-container>
+</section>
