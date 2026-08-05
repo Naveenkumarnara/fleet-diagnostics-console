@@ -16,12 +16,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const raw =
       exception instanceof HttpException ? exception.getResponse() : null;
 
+    // Only forward the specific message for HttpExceptions (which we control).
+    // Unknown errors get a generic response so internal details never leak to clients.
     const message =
-      raw && typeof raw === 'object' && 'message' in raw
-        ? (raw as { message: string | string[] }).message
-        : exception instanceof Error
-          ? exception.message
-          : 'Internal server error';
+      exception instanceof HttpException
+        ? (raw && typeof raw === 'object' && 'message' in raw
+            ? (raw as { message: string | string[] }).message
+            : exception.message)
+        : 'Internal server error';
 
     response.status(status).json({
       statusCode: status,
