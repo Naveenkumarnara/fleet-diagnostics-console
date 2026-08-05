@@ -66,7 +66,7 @@ cd backend && npm test
 cd frontend && ng test --watch=false
 ```
 
-35 tests total: 14 backend, 21 frontend.
+42 tests total: 14 backend, 28 frontend.
 
 ## API docs (Swagger)
 
@@ -87,7 +87,7 @@ Available at http://localhost:3000/api/docs when the backend is running. No stat
 
 ## What currently works
 
-- REST API with all filter combinations — `GET /api/events`, `/stats/by-vehicle`, `/stats/by-code`, `/critical`; all aggregation endpoints accept `from`/`to` time range
+- REST API with all filter combinations — `GET /api/events`, `/stats/by-vehicle`, `/stats/by-code`, `/critical`, `/context`; all aggregation endpoints accept `from`/`to` time range
 - `GET /api/health` — db connectivity check and uptime
 - Consistent error shape on every bad request: `{ statusCode, message, path, timestamp }`
 - Request logging on every HTTP call: method, path, status, duration
@@ -99,8 +99,11 @@ Available at http://localhost:3000/api/docs when the backend is running. No stat
 - Angular dashboard: reactive filter panel, paginated events table, aggregations (critical vehicles, top codes, per-vehicle breakdown) — all views respect the active time range
 - Live update banner: counts incoming SSE events **that match the active filter**, reloads all views on demand without disrupting current filters
 - Error state propagated to the UI — API failures show a message instead of a frozen spinner
+- Dashboard drill-down: KPI cards, critical vehicles, top codes, and fleet breakdown are clickable and navigate to the Event Log with filters as query params (deep-linkable, Back/Forward works)
+- Recent Events widget: latest 10, with an SSE "N new events / Refresh" bar and a flash animation on merged rows
+- Event details drawer: click any row for a slide-out with vehicle/event info, analytics (occurrences today, last seen, related-5), and drill actions — overlay, so scroll and pagination are preserved
 - Light/dark theme toggle — persists to localStorage, follows OS preference on first visit
-- 35 tests: 14 backend (parser, filters, critical logic), 21 frontend (state service reactive chains, filter-aware live counting, search panel wiring)
+- 42 tests: 14 backend (parser, filters, critical logic), 28 frontend (state service reactive chains, drill-down params, filter-aware live counting, drawer context, search panel wiring)
 
 ## What I'd do next
 

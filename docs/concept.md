@@ -117,11 +117,19 @@ The backend streams the whole fleet, so `liveStream$` runs each event through `m
 
 ```
 App (shell)
-├── SearchPanelComponent  — reactive form → FleetStateService setters
-├── LiveBannerComponent   — shows pending count, emits applyLiveUpdates()
+├── SearchPanelComponent  — reactive form → FleetStateService setters; syncs from externalFilterChange$
+├── LiveBannerComponent   — pending count / applyLiveUpdates() (hidden on /summary)
 └── router-outlet
-    ├── EventsTableComponent    — consumes fleet.events$, handles pagination
-    └── AggregationsComponent   — consumes vehicleStats$, codeSummary$, critical$
+    ├── EventsTableComponent    — fleet.events$, pagination, sort; row click opens the drawer
+    │   └── EventDetailsDrawerComponent  — overlay; fetches /events/context, drill actions
+    └── AggregationsComponent   — vehicleStats$, codeSummary$, critical$; widgets drill down
+        └── RecentEventsComponent        — fleet.recentEvents$ + live "N new / Refresh"
 ```
 
-`LoadingErrorComponent` is a small shared wrapper used in both EventsTable and Aggregations to avoid repeating the loading/error template logic.
+Shared: `LoadingErrorComponent` (loading skeleton / error box), `LevelBadgeComponent` (severity pill, reused by table, recent-events, drawer), `RelativeTimePipe`.
+
+### Drill-down & drawer
+
+Dashboard widgets navigate with `router.navigate(['/events'], { queryParams })`. `EventsTableComponent` reads `ActivatedRoute.queryParamMap` → `FleetStateService.applyFromParams()`, which sets filters only when a filter param is present (so the plain "Event Log" nav keeps current filters). Because `queryParamMap` re-emits on history navigation, **Back/Forward restores the drilled-in filters**. The search panel patches its form from `externalFilterChange$` with `{ emitEvent: false }` to avoid a valueChanges loop.
+
+The drawer is a plain overlay (not a route), so opening/closing it never touches the table's scroll position or pagination. It fetches everything in one call — `GET /api/events/context?vehicleId=&code=` returns occurrences-today, last occurrence, the vehicle's critical flag, and the last 5 related events — instead of several client-side queries.
