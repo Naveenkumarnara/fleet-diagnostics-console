@@ -91,7 +91,7 @@ User changes filter input
         └──▶ critical$     switchMap → GET /api/events/critical
 
   liveStream$  ──────────────────── EventSource /api/events/stream
-                        │
+                        │  (only events matching the active filter are counted)
                         ▼
                pendingCount$ (BehaviorSubject)
                         │
@@ -99,6 +99,8 @@ User changes filter input
                LiveBannerComponent — "N new events — Load now"
                (clicking increments refreshTrigger$, reloads all views)
 ```
+
+The backend streams the whole fleet, so `liveStream$` runs each event through `matchesActiveFilter()` before incrementing `pendingCount$` — otherwise the banner would count events a refresh wouldn't show. Changing any filter also resets the count, since the table reloads fresh at that point.
 
 ### RxJS operator choices
 

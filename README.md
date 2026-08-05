@@ -66,7 +66,7 @@ cd backend && npm test
 cd frontend && ng test --watch=false
 ```
 
-32 tests total: 14 backend, 18 frontend.
+35 tests total: 14 backend, 21 frontend.
 
 ## API docs (Swagger)
 
@@ -97,9 +97,9 @@ Available at http://localhost:3000/api/docs when the backend is running. No stat
 - Server-Sent Events stream at `/api/events/stream`
 - Seed script + background live generator (one event every 4s)
 - Angular dashboard: reactive filter panel, paginated events table, aggregations (critical vehicles, top codes, per-vehicle breakdown) — all views respect the active time range
-- Live update banner: counts incoming SSE events, reloads all views on demand without disrupting current filters
+- Live update banner: counts incoming SSE events **that match the active filter**, reloads all views on demand without disrupting current filters
 - Error state propagated to the UI — API failures show a message instead of a frozen spinner
-- 32 tests: 14 backend (parser, filters, critical logic), 18 frontend (state service reactive chains, search panel wiring)
+- 35 tests: 14 backend (parser, filters, critical logic), 21 frontend (state service reactive chains, filter-aware live counting, search panel wiring)
 
 ## What I'd do next
 
