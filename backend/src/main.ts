@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/http-exception.filter';
 import { LoggingInterceptor } from './common/logging.interceptor';
@@ -10,6 +11,11 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const config = app.get(ConfigService);
 
+  // Graceful shutdown — lets NestJS drain in-flight requests and run
+  // OnApplicationShutdown hooks (closes DB, clears live-stream timer) on SIGTERM
+  app.enableShutdownHooks();
+
+  app.use(helmet());
   app.setGlobalPrefix('api');
   app.useGlobalFilters(new AllExceptionsFilter());
   app.useGlobalInterceptors(new LoggingInterceptor());
