@@ -1,0 +1,80 @@
+<div class="drawer-scrim" [class.open]="event" (click)="close.emit()" aria-hidden="true"></div>
+
+<aside class="drawer" [class.open]="event" role="dialog" aria-modal="true" aria-label="Event details">
+  <ng-container *ngIf="event as e">
+    <header class="drawer-header">
+      <div class="drawer-title">
+        <app-level-badge [level]="e.level"></app-level-badge>
+        <span class="drawer-code">{{ e.code }}</span>
+      </div>
+      <button class="drawer-close" (click)="close.emit()" aria-label="Close details">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+    </header>
+
+    <div class="drawer-body">
+      <!-- Vehicle -->
+      <section class="section">
+        <h3 class="section-title">Vehicle</h3>
+        <div class="kv"><span class="k">Vehicle ID</span><span class="v mono">{{ e.vehicleId }}</span></div>
+        <div class="kv">
+          <span class="k">Status</span>
+          <span class="v">
+            <span class="status-pill" [class.critical]="context.data?.vehicleCritical">
+              {{ context.data?.vehicleCritical ? 'Critical' : 'Nominal' }}
+            </span>
+          </span>
+        </div>
+      </section>
+
+      <!-- Event -->
+      <section class="section">
+        <h3 class="section-title">Event</h3>
+        <div class="kv"><span class="k">Timestamp</span><span class="v mono">{{ e.timestamp | date:'yyyy-MM-dd HH:mm:ss' }}</span></div>
+        <div class="kv"><span class="k">Severity</span><span class="v"><app-level-badge [level]="e.level"></app-level-badge></span></div>
+        <div class="kv"><span class="k">Code</span><span class="v mono">{{ e.code }}</span></div>
+        <div class="kv"><span class="k">Subsystem</span><span class="v">{{ e.subsystem ?? '—' }}</span></div>
+        <div class="kv col"><span class="k">Message</span><span class="v msg">{{ e.message }}</span></div>
+      </section>
+
+      <!-- Analytics -->
+      <section class="section">
+        <h3 class="section-title">Analytics</h3>
+        <app-loading-error [loading]="context.loading" [error]="context.error"></app-loading-error>
+
+        <ng-container *ngIf="context.data as ctx">
+          <div class="stat-row">
+            <div class="stat">
+              <span class="stat-value">{{ ctx.occurrencesToday }}</span>
+              <span class="stat-label">of this code today</span>
+            </div>
+            <div class="stat">
+              <span class="stat-value small">{{ ctx.lastOccurrence ? (ctx.lastOccurrence | relativeTime) : '—' }}</span>
+              <span class="stat-label">last occurrence</span>
+            </div>
+          </div>
+
+          <div class="related">
+            <span class="related-title">Recent events — {{ e.vehicleId }}</span>
+            <ul class="related-list">
+              <li *ngFor="let r of ctx.related" class="related-item">
+                <app-level-badge [level]="r.level"></app-level-badge>
+                <span class="ri-code mono">{{ r.code }}</span>
+                <span class="ri-time">{{ r.timestamp | relativeTime }}</span>
+              </li>
+            </ul>
+          </div>
+        </ng-container>
+      </section>
+    </div>
+
+    <footer class="drawer-actions">
+      <button class="action" (click)="viewVehicle.emit(e.vehicleId)">
+        View all for {{ e.vehicleId }}
+      </button>
+      <button class="action secondary" (click)="filterCode.emit(e.code)">
+        Filter by {{ e.code }}
+      </button>
+    </footer>
+  </ng-container>
+</aside>

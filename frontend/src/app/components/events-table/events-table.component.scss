@@ -97,6 +97,10 @@ table {
     border-bottom: 1px solid var(--border);
     transition: background 0.1s;
     position: relative;
+    cursor: pointer;
+
+    &.selected { background: var(--accent-bg); }
+    &:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 
     &::before {
       content: '';

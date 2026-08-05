@@ -9,6 +9,7 @@ import {
   VehicleStats,
   CodeStats,
   CriticalVehicle,
+  EventContext,
 } from '../models/event.model';
 
 @Injectable({ providedIn: 'root' })
@@ -47,6 +48,11 @@ export class ApiService {
 
   getCritical(): Observable<CriticalVehicle[]> {
     return this.http.get<CriticalVehicle[]>(`${this.base}/events/critical`);
+  }
+
+  getEventContext(vehicleId: string, code: string): Observable<EventContext> {
+    const params = new HttpParams().set('vehicleId', vehicleId).set('code', code);
+    return this.http.get<EventContext>(`${this.base}/events/context`, { params });
   }
 
   // Returns an EventSource-backed observable that emits raw DiagnosticEvent objects

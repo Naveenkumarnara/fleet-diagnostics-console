@@ -13,6 +13,7 @@ import { LiveBannerComponent } from './components/live-banner/live-banner.compon
 import { LoadingErrorComponent } from './components/loading-error/loading-error.component';
 import { LevelBadgeComponent } from './components/level-badge/level-badge.component';
 import { RecentEventsComponent } from './components/recent-events/recent-events.component';
+import { EventDetailsDrawerComponent } from './components/event-details-drawer/event-details-drawer.component';
 import { RelativeTimePipe } from './pipes/relative-time.pipe';
 
 @NgModule({
@@ -25,6 +26,7 @@ import { RelativeTimePipe } from './pipes/relative-time.pipe';
     LoadingErrorComponent,
     LevelBadgeComponent,
     RecentEventsComponent,
+    EventDetailsDrawerComponent,
     RelativeTimePipe,
   ],
   imports: [

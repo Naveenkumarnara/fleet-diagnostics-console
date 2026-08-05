@@ -1,6 +1,6 @@
 import { Component, OnInit, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { FleetStateService, LoadState } from '../../services/fleet-state.service';
@@ -23,6 +23,7 @@ export class EventsTableComponent implements OnInit {
   constructor(
     readonly fleet: FleetStateService,
     private readonly route: ActivatedRoute,
+    private readonly router: Router,
   ) {}
 
   ngOnInit() {
@@ -43,6 +44,18 @@ export class EventsTableComponent implements OnInit {
 
   closeDrawer() {
     this.selectedEvent = null;
+  }
+
+  // Drawer actions route through query params (same path as drill-down) so the
+  // filter panel stays in sync and Back works
+  onViewVehicle(vehicleId: string) {
+    this.router.navigate(['/events'], { queryParams: { vehicleIds: vehicleId } });
+    this.closeDrawer();
+  }
+
+  onFilterCode(code: string) {
+    this.router.navigate(['/events'], { queryParams: { code } });
+    this.closeDrawer();
   }
 
   get currentPage()    { return this.fleet.currentPage; }

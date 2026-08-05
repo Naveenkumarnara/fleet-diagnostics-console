@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { convertToParamMap } from '@angular/router';
 import { Subject, of, throwError } from 'rxjs';
 import { firstValueFrom } from 'rxjs';
 import { FleetStateService } from './fleet-state.service';
@@ -145,5 +146,27 @@ describe('FleetStateService', () => {
     const filters = service.currentFilters;
     expect(filters.code).toBe('P0300');
     expect(filters.level).toBe('WARN');
+  });
+
+  it('applyFromParams applies filters from query params and clears others', () => {
+    service.setCode('P0300');
+    service.applyFromParams(convertToParamMap({ level: 'ERROR', vehicleIds: 'V001,V002' }));
+    const f = service.currentFilters;
+    expect(f.level).toBe('ERROR');
+    expect(f.vehicleIds).toEqual(['V001', 'V002']);
+    expect(f.code).toBe('');           // absent param → cleared
+  });
+
+  it('applyFromParams with no filter params keeps current filters', () => {
+    service.setCode('U0420');
+    service.applyFromParams(convertToParamMap({ page: '2' }));
+    expect(service.currentFilters.code).toBe('U0420');
+  });
+
+  it('applyFromParams fires externalFilterChange$', () => {
+    const spy = vi.fn();
+    service.externalFilterChange$.subscribe(spy);
+    service.applyFromParams(convertToParamMap({ code: 'P0300' }));
+    expect(spy).toHaveBeenCalled();
   });
 });

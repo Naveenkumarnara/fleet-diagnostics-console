@@ -50,7 +50,11 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let event of result.data; trackBy: trackById" [class]="levelClass(event.level)">
+          <tr *ngFor="let event of result.data; trackBy: trackById"
+              [class]="levelClass(event.level)"
+              [class.selected]="selectedEvent?.id === event.id"
+              (click)="openDrawer(event)" (keydown.enter)="openDrawer(event)"
+              tabindex="0" role="button" [attr.aria-label]="'View details for event ' + event.code">
             <td class="td-time">
               <span class="time-rel" [title]="event.timestamp | date:'yyyy-MM-dd HH:mm:ss'">
                 {{ event.timestamp | relativeTime }}
@@ -83,3 +87,10 @@
     </ng-container>
   </ng-container>
 </div>
+
+<app-event-details-drawer
+  [event]="selectedEvent"
+  (close)="closeDrawer()"
+  (viewVehicle)="onViewVehicle($event)"
+  (filterCode)="onFilterCode($event)"
+></app-event-details-drawer>

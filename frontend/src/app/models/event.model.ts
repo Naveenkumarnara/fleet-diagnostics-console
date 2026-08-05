@@ -50,3 +50,10 @@ export interface CriticalVehicle {
   recentErrors: number;
   lastSeen: string;
 }
+
+export interface EventContext {
+  occurrencesToday: number;
+  lastOccurrence: string | null;
+  vehicleCritical: boolean;
+  related: DiagnosticEvent[];
+}
