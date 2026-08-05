@@ -19,10 +19,10 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
       display: flex;
       align-items: center;
       gap: 10px;
-      background: rgba(52,211,153,0.06);
-      border-top: 1px solid rgba(52,211,153,0.15);
-      border-bottom: 1px solid rgba(52,211,153,0.15);
-      color: #34d399;
+      background: var(--success-bg);
+      border-top: 1px solid var(--success-border);
+      border-bottom: 1px solid var(--success-border);
+      color: var(--success);
       padding: 7px 24px;
       font-size: 12px;
       animation: fade-in 0.2s ease;
@@ -30,17 +30,17 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
     .banner-dot {
       width: 6px; height: 6px;
       border-radius: 50%;
-      background: #34d399;
+      background: var(--success);
       animation: live-pulse 1.5s ease-in-out infinite;
       flex-shrink: 0;
     }
-    .banner-text { color: #94a3b8; }
-    .banner-text strong { color: #34d399; font-weight: 600; }
+    .banner-text { color: var(--text-secondary); }
+    .banner-text strong { color: var(--success); font-weight: 600; }
     .apply-btn {
       margin-left: auto;
-      background: rgba(52,211,153,0.12);
-      border: 1px solid rgba(52,211,153,0.3);
-      color: #34d399;
+      background: var(--success-bg);
+      border: 1px solid var(--success-border);
+      color: var(--success);
       border-radius: 4px;
       padding: 3px 12px;
       font-size: 11px;
@@ -49,8 +49,8 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
       transition: background 0.15s;
       font-family: inherit;
     }
-    .apply-btn:hover { background: rgba(52,211,153,0.2); }
-    .apply-btn:focus-visible { outline: 2px solid #34d399; outline-offset: 2px; }
+    .apply-btn:hover { filter: brightness(1.1); }
+    .apply-btn:focus-visible { outline: 2px solid var(--success); outline-offset: 2px; }
   `],
 })
 export class LiveBannerComponent {
