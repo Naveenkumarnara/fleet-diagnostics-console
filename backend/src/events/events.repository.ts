@@ -48,6 +48,13 @@ export interface CodeStats {
   level: string;
 }
 
+export interface EventContext {
+  occurrencesToday: number;
+  lastOccurrence: string | null;
+  vehicleCritical: boolean;
+  related: DiagnosticEvent[];
+}
+
 @Injectable()
 export class EventsRepository {
   constructor(
@@ -159,6 +166,42 @@ export class EventsRepository {
       HAVING recentErrors >= ?
       ORDER BY recentErrors DESC
     `).all(since, threshold) as { vehicleId: string; recentErrors: number; lastSeen: string }[];
+  }
+
+  // Drawer analytics — one round-trip instead of several client-side queries.
+  eventContext(vehicleId: string, code: string): EventContext {
+    const now = new Date();
+    const startOfDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())).toISOString();
+
+    const today = this.db.connection
+      .prepare(`SELECT COUNT(*) as cnt FROM diagnostic_events WHERE vehicle_id = ? AND code = ? AND timestamp >= ?`)
+      .get(vehicleId, code, startOfDay) as { cnt: number };
+
+    const last = this.db.connection
+      .prepare(`SELECT MAX(timestamp) as ts FROM diagnostic_events WHERE vehicle_id = ? AND code = ?`)
+      .get(vehicleId, code) as { ts: string | null };
+
+    const windowMinutes = this.config.get<number>('criticalWindowMinutes')!;
+    const threshold     = this.config.get<number>('criticalErrorThreshold')!;
+    const since = new Date(Date.now() - windowMinutes * 60_000).toISOString();
+    const recentErrors = this.db.connection
+      .prepare(`SELECT COUNT(*) as cnt FROM diagnostic_events WHERE vehicle_id = ? AND level = 'ERROR' AND timestamp >= ?`)
+      .get(vehicleId, since) as { cnt: number };
+
+    const related = this.db.connection
+      .prepare(
+        `SELECT id, timestamp, vehicle_id as vehicleId, level, code, message, subsystem, mileage
+         FROM diagnostic_events WHERE vehicle_id = ?
+         ORDER BY timestamp DESC LIMIT 5`,
+      )
+      .all(vehicleId) as DiagnosticEvent[];
+
+    return {
+      occurrencesToday: today.cnt,
+      lastOccurrence: last.ts,
+      vehicleCritical: recentErrors.cnt >= threshold,
+      related,
+    };
   }
 
   private buildWhere(filters: EventFilters): { where: string; params: (string | number)[] } {

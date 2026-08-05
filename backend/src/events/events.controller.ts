@@ -15,6 +15,7 @@ import { EventsService } from './events.service';
 import { SseService } from '../sse/sse.service';
 import { QueryEventsDto } from './dto/query-events.dto';
 import { StatsQueryDto } from './dto/stats-query.dto';
+import { ContextQueryDto } from './dto/context-query.dto';
 
 @ApiTags('events')
 @Controller('events')
@@ -48,6 +49,12 @@ export class EventsController {
   @ApiResponse({ status: 200, description: 'Vehicles with >= N errors in the last X minutes' })
   critical() {
     return this.eventsService.getCriticalVehicles();
+  }
+
+  @Get('context')
+  @ApiOperation({ summary: 'Drawer analytics for a single event (occurrences, last seen, related)' })
+  context(@Query(new ValidationPipe({ transform: true })) query: ContextQueryDto) {
+    return this.eventsService.getEventContext(query.vehicleId, query.code);
   }
 
   @Sse('stream')

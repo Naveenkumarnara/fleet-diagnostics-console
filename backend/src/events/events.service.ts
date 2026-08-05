@@ -25,6 +25,10 @@ export class EventsService {
     return this.repo.criticalVehicles();
   }
 
+  getEventContext(vehicleId: string, code: string) {
+    return this.repo.eventContext(vehicleId, code);
+  }
+
   ingestRaw(raw: string) {
     const { events, errors } = this.parser.parseLines(raw);
     if (events.length) this.repo.insertMany(events);
