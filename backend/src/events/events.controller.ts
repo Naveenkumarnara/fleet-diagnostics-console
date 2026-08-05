@@ -7,6 +7,7 @@ import {
   MessageEvent,
   Req,
 } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Observable } from 'rxjs';
 import type { Request } from 'express';
@@ -50,6 +51,7 @@ export class EventsController {
   }
 
   @Sse('stream')
+  @SkipThrottle()
   @ApiOperation({ summary: 'SSE stream of live diagnostic events' })
   stream(@Req() req: Request): Observable<MessageEvent> {
     return this.sseService.subscribe(req);

@@ -9,6 +9,8 @@ services:
       CRITICAL_WINDOW_MINUTES: "15"
       CRITICAL_ERROR_THRESHOLD: "3"
       LIVE_INTERVAL_MS: "4000"
+      THROTTLE_TTL: "60"
+      THROTTLE_LIMIT: "120"
     volumes:
       # Persist the SQLite database across container restarts
       - fleet-db:/app/data
