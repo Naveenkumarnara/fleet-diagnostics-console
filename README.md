@@ -82,6 +82,8 @@ Available at http://localhost:3000/api/docs when the backend is running. No stat
 | `CRITICAL_WINDOW_MINUTES` | 15 | Window for "critical" detection |
 | `CRITICAL_ERROR_THRESHOLD` | 3 | Minimum errors to flag as critical |
 | `LIVE_INTERVAL_MS` | 4000 | Live event generation interval |
+| `THROTTLE_TTL` | 60 | Rate-limit window in seconds |
+| `THROTTLE_LIMIT` | 120 | Max requests per IP per window |
 
 ## What currently works
 
@@ -90,6 +92,8 @@ Available at http://localhost:3000/api/docs when the backend is running. No stat
 - Consistent error shape on every bad request: `{ statusCode, message, path, timestamp }`
 - Request logging on every HTTP call: method, path, status, duration
 - Config validated at startup via Joi — bad env values fail fast with a clear message
+- Security hardening: Helmet headers (CSP, HSTS, X-Frame-Options), per-IP rate limiting (120 req/min, SSE stream exempt), generic error responses that don't leak internals
+- Graceful shutdown on SIGTERM — drains in-flight requests, clears the live-stream timer, closes the DB
 - Server-Sent Events stream at `/api/events/stream`
 - Seed script + background live generator (one event every 4s)
 - Angular dashboard: reactive filter panel, paginated events table, aggregations (critical vehicles, top codes, per-vehicle breakdown) — all views respect the active time range

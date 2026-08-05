@@ -46,9 +46,13 @@ Indexes on `vehicle_id`, `level`, `code`, `timestamp` — the four dimensions of
 
 **Config validation** — `@nestjs/config` with a Joi schema in `AppModule`. If a required env var is missing or the wrong type, the app throws at startup rather than silently using a default and failing later at runtime.
 
-**Global exception filter** — `AllExceptionsFilter` catches everything and returns `{ statusCode, message, path, timestamp }`. No raw 500 stack traces leaking to the client.
+**Global exception filter** — `AllExceptionsFilter` catches everything and returns `{ statusCode, message, path, timestamp }`. Only known `HttpException`s forward their message; anything unexpected returns a generic "Internal server error" so DB paths, stack traces, and library internals never reach the client.
 
 **Request logging** — `LoggingInterceptor` logs every HTTP request: method, path, status code, duration. Wired as a global interceptor in `main.ts`.
+
+**Security hardening** — Helmet sets CSP, HSTS, and X-Frame-Options headers. `ThrottlerGuard` rate-limits every route to 120 requests per IP per minute (configurable); the SSE stream is exempt via `@SkipThrottle()` since it's one long-lived connection, not repeated requests.
+
+**Graceful shutdown** — `app.enableShutdownHooks()` means SIGTERM (Docker stop, K8s pod eviction) triggers `OnApplicationShutdown` hooks: the live-stream interval is cleared and the SQLite handle closed before the process exits, instead of dropping in-flight work.
 
 **Validation** — `class-validator` DTOs on query params. The `@Transform` decorator on `vehicleIds` handles the comma-to-array split. Date range is validated as ISO 8601 before it ever reaches the repository.
 
