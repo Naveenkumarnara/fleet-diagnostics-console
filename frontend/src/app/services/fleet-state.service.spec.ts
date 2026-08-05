@@ -88,6 +88,27 @@ describe('FleetStateService', () => {
     expect(count).toBe(1);
   });
 
+  it('does NOT count a live event that fails the active vehicle filter', async () => {
+    service.setVehicleIds(['V002']);        // event is V001 — should be ignored
+    live$.next(mockEvent);
+    const count = await firstValueFrom(service.pendingLiveCount$);
+    expect(count).toBe(0);
+  });
+
+  it('counts a live event that matches the active vehicle filter', async () => {
+    service.setVehicleIds(['V001']);
+    live$.next(mockEvent);
+    const count = await firstValueFrom(service.pendingLiveCount$);
+    expect(count).toBe(1);
+  });
+
+  it('does NOT count a live event whose level differs from the active filter', async () => {
+    service.setLevel('WARN');               // event is ERROR — should be ignored
+    live$.next(mockEvent);
+    const count = await firstValueFrom(service.pendingLiveCount$);
+    expect(count).toBe(0);
+  });
+
   it('applyLiveUpdates resets pendingCount to 0', async () => {
     live$.next(mockEvent);
     live$.next(mockEvent);

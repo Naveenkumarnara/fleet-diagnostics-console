@@ -131,14 +131,45 @@ export class FleetStateService {
       shareReplay(1),
     );
 
+    // Only count live events that match the current filter — otherwise the banner
+    // shows "30 new events" while a refresh adds none (backend streams the whole fleet)
     this.liveStream$ = this.api.getLiveStream().pipe(
-      tap(() => this.pendingCount$.next(this.pendingCount$.value + 1)),
+      tap((event) => {
+        if (this.matchesActiveFilter(event)) {
+          this.pendingCount$.next(this.pendingCount$.value + 1);
+        }
+      }),
       shareReplay(1),
     );
 
     this.pendingLiveCount$ = this.pendingCount$.asObservable();
 
     this.liveStream$.subscribe();
+
+    // A filter/page change reloads the table with fresh data, so any pending
+    // count is stale — clear it. Subscribed here so it runs on every route.
+    this.activeFilters$.subscribe(() => this.pendingCount$.next(0));
+  }
+
+  // Mirrors the backend's WHERE clause so the count reflects what a refresh
+  // would actually add. Timestamps are ISO-UTC strings — lexicographic compare is valid.
+  private matchesActiveFilter(e: DiagnosticEvent): boolean {
+    const ids = this.vehicleIds$.value;
+    if (ids.length && !ids.includes(e.vehicleId)) return false;
+
+    const code = this.code$.value.trim();
+    if (code && e.code !== code) return false;
+
+    const level = this.level$.value;
+    if (level && e.level !== level) return false;
+
+    const from = this.from$.value;
+    if (from && e.timestamp < from) return false;
+
+    const to = this.to$.value;
+    if (to && e.timestamp > to) return false;
+
+    return true;
   }
 
   setVehicleIds(ids: string[]) { this.vehicleIds$.next(ids); this.page$.next(0); }
