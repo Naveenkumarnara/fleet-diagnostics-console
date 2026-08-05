@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
+import { Subject } from 'rxjs';
 import { SearchPanelComponent } from './search-panel.component';
 import { FleetStateService } from '../../services/fleet-state.service';
 
@@ -10,6 +11,8 @@ function makeStateMock() {
     setLevel:      vi.fn(),
     setFrom:       vi.fn(),
     setTo:         vi.fn(),
+    externalFilterChange$: new Subject<void>(),
+    currentFilters: { vehicleIds: [], code: '', level: '', from: '', to: '' },
   };
 }
 

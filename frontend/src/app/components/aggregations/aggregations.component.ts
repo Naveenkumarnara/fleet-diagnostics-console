@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { FleetStateService, LoadState } from '../../services/fleet-state.service';
 import { VehicleStats, CodeStats, CriticalVehicle } from '../../models/event.model';
@@ -14,12 +15,41 @@ export class AggregationsComponent implements OnInit {
   codeSummary$!: Observable<LoadState<CodeStats[]>>;
   critical$!: Observable<LoadState<CriticalVehicle[]>>;
 
-  constructor(private fleet: FleetStateService) {}
+  constructor(
+    private fleet: FleetStateService,
+    private router: Router,
+  ) {}
 
   ngOnInit() {
     this.vehicleStats$ = this.fleet.vehicleStats$;
     this.codeSummary$  = this.fleet.codeSummary$;
     this.critical$     = this.fleet.critical$;
+  }
+
+  private drillDown(params: Record<string, string>) {
+    this.router.navigate(['/events'], { queryParams: params });
+  }
+
+  drillErrors() {
+    this.drillDown({ level: 'ERROR' });
+  }
+
+  drillCritical(vehicles: CriticalVehicle[]) {
+    if (!vehicles.length) return;
+    this.drillDown({ vehicleIds: vehicles.map((v) => v.vehicleId).join(','), level: 'ERROR' });
+  }
+
+  drillActiveVehicles(stats: VehicleStats[]) {
+    if (!stats.length) return;
+    this.drillDown({ vehicleIds: stats.map((v) => v.vehicleId).join(',') });
+  }
+
+  drillVehicle(vehicleId: string) {
+    this.drillDown({ vehicleIds: vehicleId });
+  }
+
+  drillCode(code: string) {
+    this.drillDown({ code });
   }
 
   maxCount(stats: CodeStats[]): number {

@@ -1,4 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute } from '@angular/router';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { FleetStateService, LoadState } from '../../services/fleet-state.service';
@@ -14,13 +16,33 @@ export class EventsTableComponent implements OnInit {
   state$!: Observable<LoadState<EventsResponse>>;
   totalPages$!: Observable<number>;
 
-  constructor(readonly fleet: FleetStateService) {}
+  selectedEvent: DiagnosticEvent | null = null;
+
+  private readonly destroyRef = inject(DestroyRef);
+
+  constructor(
+    readonly fleet: FleetStateService,
+    private readonly route: ActivatedRoute,
+  ) {}
 
   ngOnInit() {
     this.state$ = this.fleet.events$;
     this.totalPages$ = this.fleet.events$.pipe(
       map((s) => (s.data ? Math.ceil(s.data.total / this.fleet.pageSize) : 0)),
     );
+
+    // Query params drive filters on drill-down, deep-link, and Back/Forward
+    this.route.queryParamMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((params) => this.fleet.applyFromParams(params));
+  }
+
+  openDrawer(event: DiagnosticEvent) {
+    this.selectedEvent = event;
+  }
+
+  closeDrawer() {
+    this.selectedEvent = null;
   }
 
   get currentPage()    { return this.fleet.currentPage; }

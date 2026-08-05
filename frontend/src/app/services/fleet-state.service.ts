@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { ParamMap } from '@angular/router';
 import {
   BehaviorSubject,
   combineLatest,
@@ -49,9 +50,14 @@ export class FleetStateService {
   private readonly pendingCount$    = new BehaviorSubject<number>(0);
   // Incrementing this triggers a reload of all streams without changing filter state
   private readonly refreshTrigger$  = new BehaviorSubject<number>(0);
+  // Fires when filters are set externally (drill-down / URL) so the search panel
+  // can patch its form without a valueChanges feedback loop
+  private readonly externalChange$  = new Subject<void>();
+  readonly externalFilterChange$    = this.externalChange$.asObservable();
 
   readonly activeFilters$: Observable<EventFilters>;
   readonly events$: Observable<LoadState<EventsResponse>>;
+  readonly recentEvents$: Observable<LoadState<DiagnosticEvent[]>>;
   readonly vehicleStats$: Observable<LoadState<VehicleStats[]>>;
   readonly codeSummary$: Observable<LoadState<CodeStats[]>>;
   readonly critical$: Observable<LoadState<CriticalVehicle[]>>;
@@ -89,6 +95,19 @@ export class FleetStateService {
         this.api.getEvents(filters).pipe(
           map((data) => ({ data, loading: false, error: null })),
           catchError((err: Error) => of({ data: null, loading: false, error: err.message ?? 'Failed to load events' })),
+          startWith({ data: null, loading: true, error: null }),
+        )
+      ),
+      shareReplay(1),
+    );
+
+    // Latest 10 matching events for the dashboard widget — reuses getEvents,
+    // ignores the table's pagination (always page 0, newest first)
+    this.recentEvents$ = this.activeFilters$.pipe(
+      switchMap((filters) =>
+        this.api.getEvents({ ...filters, limit: 10, offset: 0, sortField: 'timestamp', sortDir: 'desc' }).pipe(
+          map((res) => ({ data: res.data, loading: false, error: null })),
+          catchError((err: Error) => of({ data: null, loading: false, error: err.message ?? 'Failed to load recent events' })),
           startWith({ data: null, loading: true, error: null }),
         )
       ),
@@ -183,6 +202,22 @@ export class FleetStateService {
     this.sortField$.next(field);
     this.sortDir$.next(dir);
     this.page$.next(0);
+  }
+
+  // Applies filters from URL query params (drill-down, deep-link, Back/Forward).
+  // Only runs when at least one filter param is present, so navigating to a plain
+  // /events (e.g. the nav link) keeps the user's current filters instead of clearing them.
+  applyFromParams(p: ParamMap): void {
+    const vehicleIds = p.get('vehicleIds');
+    const code = p.get('code');
+    const level = p.get('level');
+    if (vehicleIds === null && code === null && level === null) return;
+
+    this.vehicleIds$.next(vehicleIds ? vehicleIds.split(',').filter(Boolean) : []);
+    this.code$.next(code ?? '');
+    this.level$.next(level ?? '');
+    this.page$.next(0);
+    this.externalChange$.next();
   }
 
   get currentSortField(): SortField { return this.sortField$.value; }
